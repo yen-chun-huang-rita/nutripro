@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NutriPro — 素食飲食管理系統</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="app-header" id="appHeader">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-icon">🥗</div>
+      <div class="brand-text">
+        <div class="brand-name">NutriPro</div>
+        <div class="brand-sub">素食飲食管理系統</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span class="header-date" id="headerDate"></span>
+      <div class="color-picker-wrap">
+        <button class="color-picker-btn" id="colorPickerBtn" title="更換主題色">🎨</button>
+        <div class="color-palette" id="colorPalette"></div>
+      </div>
+      <div class="sync-status" id="syncStatus">
+        <span class="sync-dot"></span><span class="sync-text">已連線</span>
+      </div>
+    </div>
+  </div>
+  <nav class="nav-tabs">
+    <button class="nav-tab active" data-tab="dashboard">儀表板</button>
+    <button class="nav-tab" data-tab="food">食物資料庫</button>
+    <button class="nav-tab" data-tab="meal">飲食記錄</button>
+    <button class="nav-tab" data-tab="stats">身體數據</button>
+  </nav>
+</header>
+
+<main class="app-body">
+
+  <section id="tab-dashboard" class="tab-panel active">
+    <div class="metric-grid" id="dashMetrics"></div>
+    <div class="dash-2col">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">今日熱量</span>
+          <span class="badge" id="kcalBadge">正常</span>
+        </div>
+        <div class="chart-wrap h200"><canvas id="kcalChart" role="img" aria-label="熱量圓環圖"></canvas></div>
+        <div class="kcal-center-label">
+          <span id="kcalCenterVal">0</span>
+          <span class="kcal-center-sub">/ <span id="kcalTarget">1380</span> kcal</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">三大營養素</span></div>
+        <div class="macro-legend" id="macroLegend"></div>
+        <div class="chart-wrap h200"><canvas id="macroChart" role="img" aria-label="營養素圓餅圖"></canvas></div>
+      </div>
+    </div>
+    <div class="dash-2col">
+      <div class="card">
+        <div class="card-header"><span class="card-title">今日目標進度</span></div>
+        <div id="dashProgress"></div>
+        <div class="water-dash" id="waterDash"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">體組成現況</span></div>
+        <div id="bodyCompViz"></div>
+        <div class="sep"></div>
+        <div id="bodyStatus"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">近期體重趨勢</span>
+        <span class="badge amber">追蹤中</span>
+      </div>
+      <div class="chart-wrap h180"><canvas id="weightChart" role="img" aria-label="體重趨勢折線圖"></canvas></div>
+    </div>
+  </section>
+
+  <section id="tab-food" class="tab-panel">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">食物營養成分資料庫</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge" id="foodCount">載入中...</span>
+          <button class="btn-primary" onclick="openFoodModal()">＋ 新增食物</button>
+        </div>
+      </div>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" id="foodSearch" type="text" placeholder="搜尋食物名稱或類別..." oninput="filterFood()">
+      </div>
+      <div class="filter-row" id="filterRow"></div>
+      <div class="table-wrap">
+        <table class="data-table" id="foodTable">
+          <thead>
+            <tr>
+              <th>食物名稱</th><th>份量基準</th><th>熱量</th>
+              <th>蛋白質</th><th>碳水</th><th>纖維</th><th>脂肪</th>
+              <th>類別</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="foodTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-meal" class="tab-panel">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">飲食記錄</span>
+        <div style="display:flex;gap:10px;align-items:center">
+          <input type="date" id="logDate" class="date-input" onchange="loadLogsForDate()">
+          <span class="badge" id="savingBadge" style="display:none">儲存中...</span>
+        </div>
+      </div>
+      <div class="water-row">
+        <span class="water-label">💧 今日喝水量</span>
+        <div class="water-controls">
+          <button class="water-btn" onclick="adjustWater(-250)">－</button>
+          <span class="water-val" id="waterVal">0</span>
+          <span class="water-unit">ml</span>
+          <button class="water-btn" onclick="adjustWater(250)">＋</button>
+        </div>
+        <div class="water-progress-wrap">
+          <div class="water-prog-fill" id="waterProgFill"></div>
+        </div>
+        <span class="water-target" id="waterTargetLabel">目標 2000ml</span>
+      </div>
+      <div id="mealSections"></div>
+      <div class="sep"></div>
+      <div class="section-label">今日合計</div>
+      <div class="total-grid" id="totalGrid"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">目標達成進度</span></div>
+      <div id="mealProgress"></div>
+    </div>
+  </section>
+
+  <section id="tab-stats" class="tab-panel">
+    <div class="dash-2col">
+      <div class="card">
+        <div class="card-header"><span class="card-title">目前身體數據</span></div>
+        <div class="stats-form" id="currentForm"></div>
+        <div class="section-label" style="margin-top:16px">代謝分析</div>
+        <div id="currentResults"></div>
+        <button class="btn-primary" style="margin-top:12px;width:100%" onclick="saveBodyStat()">💾 儲存今日數據</button>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">90天目標設定</span></div>
+        <div class="stats-form" id="goalForm"></div>
+        <div class="section-label" style="margin-top:16px">目標分析</div>
+        <div id="goalResults"></div>
+        <button class="btn-secondary" style="margin-top:12px;width:100%" onclick="saveGoalSettings()">💾 儲存目標設定</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">體組成變化預測</span>
+        <span class="badge amber">90天目標</span>
+      </div>
+      <div class="chart-wrap h240"><canvas id="compChart" role="img" aria-label="體組成預測圖"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">歷史體重記錄</span></div>
+      <div class="chart-wrap h200"><canvas id="historyChart" role="img" aria-label="歷史體重圖"></canvas></div>
+    </div>
+  </section>
+
+</main>
+
+<div class="modal-overlay" id="foodModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">新增食物</span>
+      <button class="modal-close" onclick="closeFoodModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-grid">
+        <div class="field-group" style="grid-column:span 2">
+          <label class="field-label">食物名稱 *</label>
+          <input class="field-input" id="f_name" type="text" placeholder="例：板豆腐">
+        </div>
+        <div class="field-group">
+          <label class="field-label">份量基準</label>
+          <input class="field-input" id="f_unit" type="text" placeholder="例：100g">
+        </div>
+        <div class="field-group">
+          <label class="field-label">類別</label>
+          <select class="field-input" id="f_category">
+            <option>蛋白質</option><option>豆類</option><option>全穀</option>
+            <option>蔬菜</option><option>水果</option><option>菇類</option>
+            <option>海藻</option><option>堅果</option><option>乳製品</option>
+            <option>油脂</option><option>飲品</option><option>其他</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">熱量 (kcal)</label>
+          <input class="field-input" id="f_kcal" type="number" min="0" step="0.1" placeholder="0">
+        </div>
+        <div class="field-group">
+          <label class="field-label">蛋白質 (g)</label>
+          <input class="field-input" id="f_protein" type="number" min="0" step="0.1" placeholder="0">
+        </div>
+        <div class="field-group">
+          <label class="field-label">碳水化合物 (g)</label>
+          <input class="field-input" id="f_carb" type="number" min="0" step="0.1" placeholder="0">
+        </div>
+        <div class="field-group">
+          <label class="field-label">膳食纖維 (g)</label>
+          <input class="field-input" id="f_fiber" type="number" min="0" step="0.1" placeholder="0">
+        </div>
+        <div class="field-group">
+          <label class="field-label">脂肪 (g)</label>
+          <input class="field-input" id="f_fat" type="number" min="0" step="0.1" placeholder="0">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeFoodModal()">取消</button>
+      <button class="btn-primary" onclick="saveFood()">💾 儲存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <span class="modal-title">確認刪除</span>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--ink-mid);font-size:14px" id="confirmMsg">確定要刪除此項目嗎？</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeConfirm()">取消</button>
+      <button class="btn-danger" id="confirmOkBtn">確認刪除</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
