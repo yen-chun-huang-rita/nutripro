@@ -34,7 +34,7 @@ const API = (() => {
     if (!CONFIG.USE_CLOUD) throw new Error('offline');
     const res = await fetch(CONFIG.GAS_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' },  // ← 修正：避免 CORS preflight
       body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -58,7 +58,6 @@ const API = (() => {
     try {
       setSyncStatus('loading');
       const data = await gasGet({ action: 'getFoods' });
-      // 轉換欄位名稱（sheets 回傳原始欄位名）
       const foods = data.map(normFood);
       lsSet(LS.FOODS, foods);
       setSyncStatus('ok');
@@ -73,7 +72,6 @@ const API = (() => {
   async function addFood(food) {
     const res = await gasPost({ action: 'addFood', food });
     food.id = res.id;
-    // 更新本地快取
     const foods = lsGet(LS.FOODS) || [];
     foods.push(food);
     lsSet(LS.FOODS, foods);
@@ -103,7 +101,6 @@ const API = (() => {
       setSyncStatus('loading');
       const data = await gasGet({ action: 'getLogs', date });
       const logs = data.map(normLog);
-      // 合併到本地快取
       const all = lsGet(LS.LOGS) || {};
       all[date] = logs;
       lsSet(LS.LOGS, all);
@@ -121,7 +118,6 @@ const API = (() => {
       const data = await gasGet({ action: 'getLogRange', start, end });
       return data.map(normLog);
     } catch(e) {
-      // 從本地拼湊
       const all = lsGet(LS.LOGS) || {};
       const result = [];
       Object.entries(all).forEach(([date, logs]) => {
@@ -136,10 +132,8 @@ const API = (() => {
       const res = await gasPost({ action: 'saveLog', log });
       log.id = res.id;
     } catch(e) {
-      // 離線：生成本地 id
       if (!log.id) log.id = 'local_' + Date.now() + '_' + Math.random().toString(36).slice(2);
     }
-    // 始終寫入本地快取
     const all = lsGet(LS.LOGS) || {};
     if (!all[log.date]) all[log.date] = [];
     const idx = all[log.date].findIndex(l => l.id === log.id);
