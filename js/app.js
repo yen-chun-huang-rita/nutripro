@@ -17,6 +17,8 @@ async function init() {
     applySettings(settings);
     await loadLogsForDate();
     renderAll();
+    const ss=document.getElementById('syncStatus');
+    if(ss){ss.textContent='已連線';}
     showToast('資料同步完成','success');
   } catch(e) {
     const c=API.lsGet(API.LS.FOODS);
@@ -24,6 +26,8 @@ async function init() {
     STATE.bodyStats=API.lsGet(API.LS.BODY)||[];
     applySettings(API.lsGet(API.LS.SETTINGS)||{});
     loadLogsFromLS(); renderAll();
+    const ss=document.getElementById('syncStatus');
+    if(ss){ss.textContent='離線模式';}
     showToast('已切換為離線模式','error');
   }
 }
