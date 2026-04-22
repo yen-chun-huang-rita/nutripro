@@ -40,6 +40,7 @@
 
 <main class="app-body">
 
+  <!-- ── 儀表板 ── -->
   <section id="tab-dashboard" class="tab-panel active">
     <div class="metric-grid" id="dashMetrics"></div>
     <div class="dash-2col">
@@ -82,12 +83,16 @@
     </div>
   </section>
 
+  <!-- ── 食物資料庫 ── -->
   <section id="tab-food" class="tab-panel">
     <div class="card">
       <div class="card-header">
         <span class="card-title">食物營養成分資料庫</span>
-        <div style="display:flex;gap:8px;align-items:center">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <span class="badge" id="foodCount">載入中...</span>
+          <button class="btn-export" onclick="exportFoods()">📥 匯出 CSV</button>
+          <button class="btn-import" onclick="triggerImport()">📤 匯入 CSV</button>
+          <input type="file" id="importFileInput" accept=".csv,.txt" style="display:none" onchange="importFoods(event)">
           <button class="btn-primary" onclick="openFoodModal()">＋ 新增食物</button>
         </div>
       </div>
@@ -111,6 +116,7 @@
     </div>
   </section>
 
+  <!-- ── 飲食記錄 ── -->
   <section id="tab-meal" class="tab-panel">
     <div class="card">
       <div class="card-header">
@@ -144,6 +150,7 @@
     </div>
   </section>
 
+  <!-- ── 身體數據 ── -->
   <section id="tab-stats" class="tab-panel">
     <div class="dash-2col">
       <div class="card">
@@ -176,6 +183,7 @@
 
 </main>
 
+<!-- ── 新增/編輯食物 Modal ── -->
 <div class="modal-overlay" id="foodModal">
   <div class="modal">
     <div class="modal-header">
@@ -198,7 +206,7 @@
             <option>蛋白質</option><option>豆類</option><option>全穀</option>
             <option>蔬菜</option><option>水果</option><option>菇類</option>
             <option>海藻</option><option>堅果</option><option>乳製品</option>
-            <option>油脂</option><option>飲品</option><option>其他</option>
+            <option>油脂</option><option>飲品</option><option>調味料</option><option>蛋類</option><option>其他</option>
           </select>
         </div>
         <div class="field-group">
@@ -230,13 +238,14 @@
   </div>
 </div>
 
+<!-- ── 確認刪除 Modal ── -->
 <div class="modal-overlay" id="confirmModal">
   <div class="modal" style="max-width:380px">
     <div class="modal-header">
       <span class="modal-title">確認刪除</span>
     </div>
     <div class="modal-body">
-      <p style="color:var(--ink-mid);font-size:14px" id="confirmMsg">確定要刪除此項目嗎？</p>
+      <p style="color:var(--ink-mid);font-size:15px" id="confirmMsg">確定要刪除此項目嗎？</p>
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeConfirm()">取消</button>
