@@ -12,10 +12,10 @@ async function init() {
   showToast('正在同步資料...','info',2000);
   try {
     const timeout = new Promise((_,reject) => setTimeout(() => reject(new Error('timeout')), 15000));
-const [foods,settings,bodyStats] = await Promise.race([
-  Promise.all([API.getFoods(),API.getSettings(),API.getBodyStats()]),
-  timeout
-]);
+    const [foods,settings,bodyStats] = await Promise.race([
+      Promise.all([API.getFoods(),API.getSettings(),API.getBodyStats()]),
+      timeout
+    ]);
     STATE.foods = foods.length>0?foods:getBuiltinFoods();
     STATE.bodyStats = bodyStats;
     applySettings(settings);
@@ -32,7 +32,8 @@ const [foods,settings,bodyStats] = await Promise.race([
     loadLogsFromLS(); renderAll();
     const ss=document.getElementById('syncStatus');
     if(ss){ss.textContent='離線模式';}
-    showToast('已切換為離線模式','error');
+    showToast('連線失敗，5秒後重試...','error');
+    setTimeout(init, 5000);
   }
 }
 
