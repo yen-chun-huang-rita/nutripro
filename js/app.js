@@ -100,9 +100,8 @@ window.loadLogsForDate=async function(){
     const wl=logs.find(l=>l.meal==='__water__');
     STATE.water=wl?+wl.water:0;
   }catch(e){loadLogsFromLS();}
-  renderMeals(); updateWaterUI();
+  renderMeals(); updateWaterUI(); renderDashboard();
 };
-
 function loadLogsFromLS(){
   const all=API.lsGet(API.LS.LOGS)||{};
   STATE.logs=all;
@@ -580,7 +579,13 @@ window.calcStats=function(){
 
 window.saveBodyStat=async function(){
   const stat={date:todayStr(),weight:STATE.body.weight,fatPct:STATE.body.fatPct,musclePct:STATE.body.musclePct,height:STATE.body.height,age:STATE.body.age};
-  try{await API.saveBodyStat(stat);STATE.bodyStats.push(stat);showToast('身體數據已儲存','success');renderHistoryChart();}
+  try{
+    await API.saveBodyStat(stat);
+    STATE.bodyStats.push(stat);
+    showToast('身體數據已儲存','success');
+    renderHistoryChart();
+    renderBodyStatTable();
+  }
   catch(e){showToast('儲存失敗：'+e.message,'error');}
 };
 
