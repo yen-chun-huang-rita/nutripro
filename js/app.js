@@ -11,7 +11,11 @@ async function init() {
   setHeaderDate(); setupTabs(); setupColorPicker(); setupDatePicker(); renderStatsForm();
   showToast('正在同步資料...','info',2000);
   try {
-    const [foods,settings,bodyStats] = await Promise.all([API.getFoods(),API.getSettings(),API.getBodyStats()]);
+    const timeout = new Promise((_,reject) => setTimeout(() => reject(new Error('timeout')), 15000));
+const [foods,settings,bodyStats] = await Promise.race([
+  Promise.all([API.getFoods(),API.getSettings(),API.getBodyStats()]),
+  timeout
+]);
     STATE.foods = foods.length>0?foods:getBuiltinFoods();
     STATE.bodyStats = bodyStats;
     applySettings(settings);
