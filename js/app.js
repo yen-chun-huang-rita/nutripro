@@ -59,7 +59,7 @@ function applySettings(s){
 
 function renderAll(){renderFoodTable();renderMeals();renderStatsForm();calcStats();renderDashboard();}
 
-// ── TABS 修正：使用 addEventListener，避免 onclick 衝突 ──
+// ── TABS ──────────────────────────────────────────────────
 function setupTabs(){
   document.querySelectorAll('.nav-tab').forEach(btn=>{
     btn.addEventListener('click',function(){
@@ -202,7 +202,7 @@ window.filterFood=function(){
   if(!tbody)return;
   tbody.innerHTML=data.map(f=>`<tr>
     <td class="ft-name">${f.name}</td>
-    <td style="color:var(--ink-faint);font-size:12px">${f.unit}</td>
+    <td style="color:var(--ink-faint);font-size:14px">${f.unit}</td>
     <td><span class="kcal-badge">${f.kcal}</span></td>
     <td>${f.protein}g</td><td>${f.carb}g</td><td>${f.fiber}g</td><td>${f.fat}g</td>
     <td><span class="cat-pill cat-${f.category}">${f.category}</span></td>
@@ -214,6 +214,102 @@ window.filterFood=function(){
 };
 
 function renderFoodTable(){buildFilterBtns();filterFood();}
+
+// ── 匯出 Excel ──────────────────────────────────────────
+window.exportFoods=function(){
+  const headers=['名稱','份量單位','熱量(kcal)','蛋白質(g)','碳水(g)','膳食纖維(g)','脂肪(g)','類別'];
+  const rows=STATE.foods.map(f=>[f.name,f.unit,f.kcal,f.protein,f.carb,f.fiber,f.fat,f.category]);
+
+  // 組合 CSV（用 BOM 讓 Excel 正確顯示中文）
+  const BOM='\uFEFF';
+  const csv=BOM+[headers,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='NutriPro_食物資料庫_'+todayStr()+'.csv';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  showToast(`已匯出 ${STATE.foods.length} 筆食物資料`,'success');
+};
+
+// ── 匯入 Excel/CSV ───────────────────────────────────────
+window.triggerImport=function(){
+  document.getElementById('importFileInput').click();
+};
+
+window.importFoods=async function(e){
+  const file=e.target.files[0];
+  if(!file){return;}
+  e.target.value=''; // reset so same file can be re-selected
+
+  const text=await file.text();
+  // 移除 BOM
+  const clean=text.replace(/^\uFEFF/,'');
+  const lines=clean.split(/\r?\n/).filter(l=>l.trim());
+  if(lines.length<2){showToast('檔案格式錯誤或無資料','error');return;}
+
+  // 解析 CSV（支援引號包覆）
+  function parseCSVLine(line){
+    const result=[];let cur='';let inQ=false;
+    for(let i=0;i<line.length;i++){
+      const ch=line[i];
+      if(ch==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else{inQ=!inQ;}}
+      else if(ch===','&&!inQ){result.push(cur.trim());cur='';}
+      else{cur+=ch;}
+    }
+    result.push(cur.trim());
+    return result;
+  }
+
+  const header=parseCSVLine(lines[0]).map(h=>h.toLowerCase().replace(/[（(].*[）)]/g,'').trim());
+  // 欄位對應（容錯）
+  const colMap={
+    name:   header.findIndex(h=>h.includes('名稱')||h==='name'),
+    unit:   header.findIndex(h=>h.includes('份量')||h.includes('單位')||h==='unit'),
+    kcal:   header.findIndex(h=>h.includes('熱量')||h==='kcal'),
+    protein:header.findIndex(h=>h.includes('蛋白')||h==='protein'),
+    carb:   header.findIndex(h=>h.includes('碳水')||h==='carb'),
+    fiber:  header.findIndex(h=>h.includes('纖維')||h==='fiber'),
+    fat:    header.findIndex(h=>h.includes('脂肪')||h==='fat'),
+    category:header.findIndex(h=>h.includes('類別')||h==='category'),
+  };
+
+  if(colMap.name<0||colMap.kcal<0){showToast('找不到必要欄位（名稱、熱量），請確認格式','error');return;}
+
+  let added=0,skipped=0;
+  const toAdd=[];
+  for(let i=1;i<lines.length;i++){
+    const cols=parseCSVLine(lines[i]);
+    const name=(cols[colMap.name]||'').trim();
+    if(!name){skipped++;continue;}
+    // 跳過已存在（同名）
+    if(STATE.foods.some(f=>f.name===name)){skipped++;continue;}
+    toAdd.push({
+      name,
+      unit:   colMap.unit>=0?(cols[colMap.unit]||'100g'):'100g',
+      kcal:   +(cols[colMap.kcal]||0),
+      protein:colMap.protein>=0?+(cols[colMap.protein]||0):0,
+      carb:   colMap.carb>=0?+(cols[colMap.carb]||0):0,
+      fiber:  colMap.fiber>=0?+(cols[colMap.fiber]||0):0,
+      fat:    colMap.fat>=0?+(cols[colMap.fat]||0):0,
+      category:colMap.category>=0?(cols[colMap.category]||'其他'):'其他',
+    });
+  }
+
+  if(toAdd.length===0){showToast(`無新增資料（已跳過 ${skipped} 筆重複）`,'info');return;}
+
+  showToast(`正在匯入 ${toAdd.length} 筆...`,'info',5000);
+  for(const food of toAdd){
+    try{
+      const res=await API.addFood(food);
+      food.id=res.id;
+      STATE.foods.push(food);
+      added++;
+    }catch(err){skipped++;}
+  }
+  renderFoodTable();
+  showToast(`匯入完成：新增 ${added} 筆${skipped>0?`，跳過 ${skipped} 筆`:''}`, 'success', 4000);
+};
 
 window.openFoodModal=function(food=null){
   STATE.editingFoodId=food?food.id:null;
@@ -301,7 +397,7 @@ function renderMeals(){
         <span class="log-col-h">碳水</span><span class="log-col-h">脂肪</span>
         <span class="log-col-h">熱量</span><span></span>
       </div>
-      ${rows||'<div style="padding:6px 14px;font-size:12px;color:var(--ink-faint)">尚未記錄</div>'}
+      ${rows||'<div style="padding:6px 14px;font-size:14px;color:var(--ink-faint)">尚未記錄</div>'}
       <div class="add-row">
         <div class="autocomplete-wrap" id="ac-wrap-${meal}">
           <input class="add-input" id="ac-input-${meal}" type="text" placeholder="輸入食物名稱搜尋..."
@@ -309,7 +405,7 @@ function renderMeals(){
           <div class="autocomplete-list" id="ac-list-${meal}"></div>
         </div>
         <input class="add-input" id="qty-${meal}" type="number" value="100" min="1" placeholder="克/ml">
-        <span style="font-size:12px;color:var(--ink-faint);align-self:center">g/ml</span>
+        <span style="font-size:14px;color:var(--ink-faint);align-self:center">g/ml</span>
         <button class="btn-primary" onclick="addLog('${meal}')">＋ 新增</button>
       </div>
     </div>`;
@@ -445,6 +541,12 @@ window.calcStats=function(){
   const act=+document.getElementById('s_activity')?.value||STATE.body.activity;
   STATE.body={height:h,weight:w,age:a,fatPct:fp,musclePct:mp,activity:act};
   const bmr=Math.round(10*w+6.25*h-5*a-161),tdee=Math.round(bmr*act),rec=Math.round(tdee-200);
+
+  // 讀取使用者自訂調整值（若有）
+  const adjInput=document.getElementById('kcalAdj');
+  const adj=adjInput?+adjInput.value||0:0;
+  const finalKcal=rec+adj;
+
   const cr=document.getElementById('currentResults');
   if(cr)cr.innerHTML=[
     ['基礎代謝率 (BMR)',`${bmr} kcal`],
@@ -452,8 +554,13 @@ window.calcStats=function(){
     ['脂肪重量',`${(w*fp/100).toFixed(1)} kg`],
     ['骨骼肌重量',`${(w*mp/100).toFixed(1)} kg`],
     ['去脂體重',`${(w*(1-fp/100)).toFixed(1)} kg`],
-    ['建議每日攝取',`<span class="res-hl">${rec} kcal</span>`],
+    ['調整值',`<div class="kcal-adj-row"><span class="adj-hint">在建議值基礎上微調（正/負）</span><input id="kcalAdj" class="field-input adj-input" type="number" value="${adj}" step="50" placeholder="0" oninput="calcStats()"> kcal</div>`],
+    ['建議每日攝取',`<span class="res-hl">${finalKcal} kcal</span>`],
   ].map(([l,v])=>`<div class="result-row"><span class="res-label">${l}</span><span class="res-val">${v}</span></div>`).join('');
+
+  // 套用到目標
+  STATE.target.kcal=finalKcal;
+
   const gw=+document.getElementById('g_weight')?.value||STATE.goal.weight;
   const gfp=+document.getElementById('g_fat')?.value||STATE.goal.fatPct;
   const gmp=+document.getElementById('g_muscle')?.value||STATE.goal.musclePct;
@@ -478,7 +585,9 @@ window.saveBodyStat=async function(){
 };
 
 window.saveGoalSettings=async function(){
-  const s={goalWeight:STATE.goal.weight,goalFatPct:STATE.goal.fatPct,goalMusclePct:STATE.goal.musclePct,bodyHeight:STATE.body.height,bodyWeight:STATE.body.weight,bodyAge:STATE.body.age,bodyFatPct:STATE.body.fatPct,bodyMusclePct:STATE.body.musclePct,bodyActivity:STATE.body.activity};
+  const adjInput=document.getElementById('kcalAdj');
+  const adj=adjInput?+adjInput.value||0:0;
+  const s={goalWeight:STATE.goal.weight,goalFatPct:STATE.goal.fatPct,goalMusclePct:STATE.goal.musclePct,bodyHeight:STATE.body.height,bodyWeight:STATE.body.weight,bodyAge:STATE.body.age,bodyFatPct:STATE.body.fatPct,bodyMusclePct:STATE.body.musclePct,bodyActivity:STATE.body.activity,kcalAdj:adj};
   await API.saveSettings(s);showToast('目標設定已儲存','success');
 };
 
@@ -551,16 +660,16 @@ function renderWeightChart(){
 
 function renderCompChart(cf,gf,cm,gm){
   destroyChart('comp');const el=document.getElementById('compChart');if(!el)return;
-  CHARTS.comp=new Chart(el,{type:'bar',data:{labels:['體脂率','骨骼肌率','水分+其他'],datasets:[{label:'目前',data:[cf,cm,+(100-cf-cm).toFixed(1)],backgroundColor:['#e87070','#2d9e6e','#aab8aa']},{label:'目標',data:[gf,gm,+(100-gf-gm).toFixed(1)],backgroundColor:['#f5c0bb','#c3e8d4','#dde8dd']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:12},usePointStyle:true}}},scales:{y:{max:100,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.05)'}},x:{grid:{display:false}}}}});
+  CHARTS.comp=new Chart(el,{type:'bar',data:{labels:['體脂率','骨骼肌率','水分+其他'],datasets:[{label:'目前',data:[cf,cm,+(100-cf-cm).toFixed(1)],backgroundColor:['#e87070','#2d9e6e','#aab8aa']},{label:'目標',data:[gf,gm,+(100-gf-gm).toFixed(1)],backgroundColor:['#f5c0bb','#c3e8d4','#dde8dd']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:13},usePointStyle:true}}},scales:{y:{max:100,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.05)'}},x:{grid:{display:false}}}}});
 }
 
 function renderHistoryChart(){
   destroyChart('history');const el=document.getElementById('historyChart');if(!el)return;
   const stats=STATE.bodyStats.slice(-30);if(!stats.length)return;
-  CHARTS.history=new Chart(el,{type:'line',data:{labels:stats.map(s=>s.date),datasets:[{label:'體重(kg)',data:stats.map(s=>+s.weight),borderColor:'#2d9e6e',backgroundColor:'rgba(45,158,110,.08)',yAxisID:'y',tension:.4,fill:true},{label:'體脂率(%)',data:stats.map(s=>+s.fatPct),borderColor:'#e87070',backgroundColor:'transparent',yAxisID:'y2',tension:.4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:12},usePointStyle:true}}},scales:{y:{position:'left',ticks:{callback:v=>v+'kg'},grid:{color:'rgba(0,0,0,0.04)'}},y2:{position:'right',ticks:{callback:v=>v+'%'},grid:{display:false}},x:{grid:{display:false}}}}});
+  CHARTS.history=new Chart(el,{type:'line',data:{labels:stats.map(s=>s.date),datasets:[{label:'體重(kg)',data:stats.map(s=>+s.weight),borderColor:'#2d9e6e',backgroundColor:'rgba(45,158,110,.08)',yAxisID:'y',tension:.4,fill:true},{label:'體脂率(%)',data:stats.map(s=>+s.fatPct),borderColor:'#e87070',backgroundColor:'transparent',yAxisID:'y2',tension:.4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:13},usePointStyle:true}}},scales:{y:{position:'left',ticks:{callback:v=>v+'kg'},grid:{color:'rgba(0,0,0,0.04)'}},y2:{position:'right',ticks:{callback:v=>v+'%'},grid:{display:false}},x:{grid:{display:false}}}}});
 }
 
-// ── 內建食物（台灣食品成分資料庫 2022 + USDA 補充）─────────
+// ── 內建食物 ─────────────────────────────────────────────
 function getBuiltinFoods(){
   const raw=[
     {n:'糙米（熟）',u:'100g',k:111,p:2.6,c:23,fi:1.8,f:0.9,t:'全穀'},
