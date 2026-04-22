@@ -10,15 +10,14 @@ const API = (() => {
 
   // ── 同步狀態 UI ──────────────────────────────────────────
   function setSyncStatus(state) {
-    const dot  = document.querySelector('.sync-dot');
-    const text = document.querySelector('.sync-text');
-    if (!dot || !text) return;
-    dot.className = 'sync-dot';
-    if (state === 'ok')      { dot.classList.add('');        text.textContent = '已連線'; }
-    if (state === 'loading') { dot.classList.add('loading'); text.textContent = '同步中...'; }
-    if (state === 'error')   { dot.classList.add('error');   text.textContent = '離線模式'; }
-  }
-
+  const dot  = document.querySelector('.sync-dot');
+  const text = document.querySelector('.sync-text');
+  if (!dot || !text) return;
+  dot.className = 'sync-dot';
+  if (state === 'loading') { dot.classList.add('loading'); text.textContent = '同步中...'; }
+  if (state === 'error')   { dot.classList.add('error');   text.textContent = '離線模式'; }
+  if (state === 'ok')      { text.textContent = '已連線'; }
+}
   // ── 通用 GAS 請求 ─────────────────────────────────────────
   async function gasGet(params) {
     if (!CONFIG.USE_CLOUD) throw new Error('offline');
