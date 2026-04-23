@@ -57,7 +57,7 @@ function applySettings(s){
   if(s.water)        STATE.water          =+s.water;
 }
 
-function renderAll(){renderFoodTable();renderMeals();renderStatsForm();calcStats();renderDashboard();}
+function renderAll(){renderFoodTable();renderMeals();renderStatsForm();calcStats();renderDashboard();renderBodyStatTable();}
 
 // ── TABS ──────────────────────────────────────────────────
 function setupTabs(){
@@ -102,6 +102,7 @@ window.loadLogsForDate=async function(){
   }catch(e){loadLogsFromLS();}
   renderMeals(); updateWaterUI(); renderDashboard();
 };
+
 function loadLogsFromLS(){
   const all=API.lsGet(API.LS.LOGS)||{};
   STATE.logs=all;
@@ -595,6 +596,33 @@ window.saveGoalSettings=async function(){
   const s={goalWeight:STATE.goal.weight,goalFatPct:STATE.goal.fatPct,goalMusclePct:STATE.goal.musclePct,bodyHeight:STATE.body.height,bodyWeight:STATE.body.weight,bodyAge:STATE.body.age,bodyFatPct:STATE.body.fatPct,bodyMusclePct:STATE.body.musclePct,bodyActivity:STATE.body.activity,kcalAdj:adj};
   await API.saveSettings(s);showToast('目標設定已儲存','success');
 };
+
+function renderBodyStatTable(){
+  const el=document.getElementById('bodyStatTable');
+  if(!el)return;
+  const stats=[...STATE.bodyStats].sort((a,b)=>b.date>a.date?1:-1).slice(0,30);
+  if(!stats.length){
+    el.innerHTML='<p style="color:var(--ink-faint);font-size:14px;padding:12px 0">尚無歷史數據，請儲存今日數據開始記錄</p>';
+    return;
+  }
+  el.innerHTML=`<div class="section-label" style="margin-top:16px">歷史數據記錄</div>
+  <div class="table-wrap"><table class="data-table">
+    <thead><tr>
+      <th>日期</th><th>體重 (kg)</th><th>體脂率 (%)</th><th>骨骼肌率 (%)</th><th>BMI</th>
+    </tr></thead>
+    <tbody>${stats.map(s=>{
+      const bmi=s.height?(s.weight/((s.height/100)**2)).toFixed(1):'-';
+      const bmiCls=bmi==='-'?'':+bmi<18.5?'color:var(--blue)':+bmi<24?'color:var(--green)':+bmi<27?'color:var(--amber)':'color:var(--red)';
+      return `<tr>
+        <td style="font-weight:500">${s.date}</td>
+        <td>${s.weight||'-'}</td>
+        <td>${s.fatPct||'-'}</td>
+        <td>${s.musclePct||'-'}</td>
+        <td style="${bmiCls};font-weight:600">${bmi}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
 
 // ══════════════════════════════════════════════════════════
 //  DASHBOARD
