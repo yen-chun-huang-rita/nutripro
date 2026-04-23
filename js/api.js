@@ -10,14 +10,15 @@ const API = (() => {
 
   // ── 同步狀態 UI ──────────────────────────────────────────
   function setSyncStatus(state) {
-  const dot  = document.querySelector('.sync-dot');
-  const text = document.querySelector('.sync-text');
-  if (!dot || !text) return;
-  dot.className = 'sync-dot';
-  if (state === 'loading') { dot.classList.add('loading'); text.textContent = '同步中...'; }
-  if (state === 'error')   { dot.classList.add('error');   text.textContent = '離線模式'; }
-  if (state === 'ok')      { text.textContent = '已連線'; }
-}
+    const dot  = document.querySelector('.sync-dot');
+    const text = document.querySelector('.sync-text');
+    if (!dot || !text) return;
+    dot.className = 'sync-dot';
+    if (state === 'ok')      { dot.classList.add('');        text.textContent = '已連線'; }
+    if (state === 'loading') { dot.classList.add('loading'); text.textContent = '同步中...'; }
+    if (state === 'error')   { dot.classList.add('error');   text.textContent = '離線模式'; }
+  }
+
   // ── 通用 GAS 請求 ─────────────────────────────────────────
   async function gasGet(params) {
     if (!CONFIG.USE_CLOUD) throw new Error('offline');
@@ -179,6 +180,20 @@ const API = (() => {
     return stat;
   }
 
+  async function saveBodyStatUpdate(stat) {
+    await gasPost({ action: 'updateBodyStat', stat });
+    const all = lsGet(LS.BODY) || [];
+    const idx = all.findIndex(s => s.id === stat.id);
+    if (idx >= 0) { all[idx] = stat; lsSet(LS.BODY, all); }
+    return stat;
+  }
+
+  async function deleteBodyStat(id) {
+    await gasPost({ action: 'deleteBodyStat', id });
+    const all = (lsGet(LS.BODY) || []).filter(s => s.id !== id);
+    lsSet(LS.BODY, all);
+  }
+
   // ════════════════════════════════════════════════════════
   //  SETTINGS
   // ════════════════════════════════════════════════════════
@@ -217,7 +232,7 @@ const API = (() => {
   return {
     getFoods, addFood, updateFood, deleteFood,
     getLogsForDate, getLogRange, saveLog, deleteLog,
-    getBodyStats, saveBodyStat,
+    getBodyStats, saveBodyStat, saveBodyStatUpdate, deleteBodyStat,
     getSettings, saveSettings,
     lsGet, lsSet, LS,
   };
