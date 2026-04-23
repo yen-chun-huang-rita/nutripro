@@ -57,7 +57,7 @@ function applySettings(s){
   if(s.water)        STATE.water          =+s.water;
 }
 
-function renderAll(){renderFoodTable();renderMeals();renderStatsForm();calcStats();renderDashboard();renderBodyStatTable();}
+function renderAll(){renderFoodTable();renderMeals();renderStatsForm();calcStats();renderDashboard();renderBodyStatYearOptions();renderBodyStatTable();}
 
 // ── TABS ──────────────────────────────────────────────────
 function setupTabs(){
@@ -512,13 +512,15 @@ function renderMealProgress(){
 function renderStatsForm(){
   const B=STATE.body,G=STATE.goal;
   const cf=document.getElementById('currentForm'),gf=document.getElementById('goalForm');
+  const dateEl=document.getElementById('bodyStatDate');
+  if(dateEl&&!dateEl.value) dateEl.value=todayStr();
   if(!cf||!gf)return;
   cf.innerHTML=`
-    <div class="field-group"><label class="field-label">身高 (cm)</label><input class="field-input" id="s_height" type="number" value="${B.height}" oninput="calcStats()"></div>
-    <div class="field-group"><label class="field-label">體重 (kg)</label><input class="field-input" id="s_weight" type="number" value="${B.weight}" step="0.1" oninput="calcStats()"></div>
-    <div class="field-group"><label class="field-label">年齡</label><input class="field-input" id="s_age" type="number" value="${B.age}" oninput="calcStats()"></div>
-    <div class="field-group"><label class="field-label">體脂率 (%)</label><input class="field-input" id="s_fat" type="number" value="${B.fatPct}" step="0.1" oninput="calcStats()"></div>
-    <div class="field-group"><label class="field-label">骨骼肌率 (%)</label><input class="field-input" id="s_muscle" type="number" value="${B.musclePct}" step="0.1" oninput="calcStats()"></div>
+    <div class="field-group"><label class="field-label">身高 (cm)</label><input class="field-input" id="s_height" type="number" value="${B.height||''}" placeholder="例：162" oninput="calcStats()"></div>
+    <div class="field-group"><label class="field-label">體重 (kg)</label><input class="field-input" id="s_weight" type="number" value="${B.weight||''}" step="0.1" placeholder="例：48.4" oninput="calcStats()"></div>
+    <div class="field-group"><label class="field-label">年齡</label><input class="field-input" id="s_age" type="number" value="${B.age||''}" placeholder="例：54" oninput="calcStats()"></div>
+    <div class="field-group"><label class="field-label">體脂率 (%)</label><input class="field-input" id="s_fat" type="number" value="${B.fatPct||''}" step="0.1" placeholder="例：25.2" oninput="calcStats()"></div>
+    <div class="field-group"><label class="field-label">骨骼肌率 (%)</label><input class="field-input" id="s_muscle" type="number" value="${B.musclePct||''}" step="0.1" placeholder="例：26.9" oninput="calcStats()"></div>
     <div class="field-group"><label class="field-label">活動量</label>
       <select class="field-input" id="s_activity" onchange="calcStats()">
         <option value="1.2"   ${B.activity==1.2  ?'selected':''}>久坐不動</option>
@@ -579,13 +581,21 @@ window.calcStats=function(){
 };
 
 window.saveBodyStat=async function(){
-  const stat={date:todayStr(),weight:STATE.body.weight,fatPct:STATE.body.fatPct,musclePct:STATE.body.musclePct,height:STATE.body.height,age:STATE.body.age};
+  const dateEl=document.getElementById('bodyStatDate');
+  const date=dateEl?dateEl.value:todayStr();
+  if(!date){showToast('請選擇日期','error');return;}
+  if(!STATE.body.weight){showToast('請輸入體重','error');return;}
+  const stat={date,weight:STATE.body.weight,fatPct:STATE.body.fatPct,musclePct:STATE.body.musclePct,height:STATE.body.height,age:STATE.body.age};
   try{
     await API.saveBodyStat(stat);
-    STATE.bodyStats.push(stat);
-    showToast('身體數據已儲存','success');
+    // 更新或新增到 bodyStats
+    const idx=STATE.bodyStats.findIndex(s=>s.date===date);
+    if(idx>=0) STATE.bodyStats[idx]=stat; else STATE.bodyStats.push(stat);
+    showToast(`${date} 數據已儲存`,'success');
     renderHistoryChart();
     renderBodyStatTable();
+    renderBodyStatYearOptions();
+    renderDashboard();
   }
   catch(e){showToast('儲存失敗：'+e.message,'error');}
 };
@@ -597,21 +607,47 @@ window.saveGoalSettings=async function(){
   await API.saveSettings(s);showToast('目標設定已儲存','success');
 };
 
+let _bodyTableOpen = true;
+
+window.toggleBodyStatTable = function(){
+  _bodyTableOpen = !_bodyTableOpen;
+  const el = document.getElementById('bodyStatTable');
+  const icon = document.getElementById('bodyStatToggleIcon');
+  if(el) el.style.display = _bodyTableOpen ? '' : 'none';
+  if(icon) icon.textContent = _bodyTableOpen ? '▼' : '▶';
+};
+
+function renderBodyStatYearOptions(){
+  const sel = document.getElementById('filterYear');
+  if(!sel) return;
+  const years = [...new Set(STATE.bodyStats.map(s => s.date.slice(0,4)))].sort((a,b)=>b-a);
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">全部年度</option>' + years.map(y=>`<option value="${y}" ${y===cur?'selected':''}>${y}年</option>`).join('');
+}
+
 function renderBodyStatTable(){
   const el=document.getElementById('bodyStatTable');
   if(!el)return;
-  const stats=[...STATE.bodyStats].sort((a,b)=>b.date>a.date?1:-1).slice(0,30);
+  if(!_bodyTableOpen){el.style.display='none';return;}
+
+  const yr = document.getElementById('filterYear')?.value||'';
+  const mo = document.getElementById('filterMonth')?.value||'';
+
+  let stats=[...STATE.bodyStats].sort((a,b)=>b.date>a.date?1:-1);
+  if(yr) stats=stats.filter(s=>s.date.startsWith(yr));
+  if(mo) stats=stats.filter(s=>s.date.slice(5,7)===mo);
+
   if(!stats.length){
-    el.innerHTML='<p style="color:var(--ink-faint);font-size:14px;padding:12px 0">尚無歷史數據，請儲存今日數據開始記錄</p>';
+    el.innerHTML='<p style="color:var(--ink-faint);font-size:14px;padding:12px 0">此區間無數據</p>';
     return;
   }
-  el.innerHTML=`<div class="section-label" style="margin-top:16px">歷史數據記錄</div>
-  <div class="table-wrap"><table class="data-table">
+  el.innerHTML=`<div class="table-wrap"><table class="data-table">
     <thead><tr>
       <th>日期</th><th>體重 (kg)</th><th>體脂率 (%)</th><th>骨骼肌率 (%)</th><th>BMI</th>
     </tr></thead>
     <tbody>${stats.map(s=>{
-      const bmi=s.height?(s.weight/((s.height/100)**2)).toFixed(1):'-';
+      const h=+s.height||STATE.body.height||162;
+      const bmi=h?(+s.weight/((h/100)**2)).toFixed(1):'-';
       const bmiCls=bmi==='-'?'':+bmi<18.5?'color:var(--blue)':+bmi<24?'color:var(--green)':+bmi<27?'color:var(--amber)':'color:var(--red)';
       return `<tr>
         <td style="font-weight:500">${s.date}</td>
@@ -698,8 +734,14 @@ function renderCompChart(cf,gf,cm,gm){
 
 function renderHistoryChart(){
   destroyChart('history');const el=document.getElementById('historyChart');if(!el)return;
-  const stats=STATE.bodyStats.slice(-30);if(!stats.length)return;
-  CHARTS.history=new Chart(el,{type:'line',data:{labels:stats.map(s=>s.date),datasets:[{label:'體重(kg)',data:stats.map(s=>+s.weight),borderColor:'#2d9e6e',backgroundColor:'rgba(45,158,110,.08)',yAxisID:'y',tension:.4,fill:true},{label:'體脂率(%)',data:stats.map(s=>+s.fatPct),borderColor:'#e87070',backgroundColor:'transparent',yAxisID:'y2',tension:.4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:13},usePointStyle:true}}},scales:{y:{position:'left',ticks:{callback:v=>v+'kg'},grid:{color:'rgba(0,0,0,0.04)'}},y2:{position:'right',ticks:{callback:v=>v+'%'},grid:{display:false}},x:{grid:{display:false}}}}});
+  const stats=[...STATE.bodyStats].sort((a,b)=>a.date>b.date?1:-1).slice(-30);
+  if(!stats.length)return;
+  const labels=stats.map(s=>s.date.slice(5)); // MM-DD
+  CHARTS.history=new Chart(el,{type:'line',data:{labels,datasets:[
+    {label:'體重(kg)',data:stats.map(s=>+s.weight||null),borderColor:'#2d9e6e',backgroundColor:'rgba(45,158,110,.08)',yAxisID:'y',tension:.4,fill:true,pointRadius:4,pointBackgroundColor:'#2d9e6e'},
+    {label:'體脂率(%)',data:stats.map(s=>+s.fatPct||null),borderColor:'#e87070',backgroundColor:'transparent',yAxisID:'y2',tension:.4,pointRadius:3},
+    {label:'骨骼肌率(%)',data:stats.map(s=>+s.musclePct||null),borderColor:'#1d5c8a',backgroundColor:'transparent',yAxisID:'y2',tension:.4,pointRadius:3,borderDash:[4,3]},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:13},usePointStyle:true}}},scales:{y:{position:'left',ticks:{callback:v=>v+'kg'},grid:{color:'rgba(0,0,0,0.04)'}},y2:{position:'right',ticks:{callback:v=>v+'%'},grid:{display:false}},x:{grid:{display:false}}}}});
 }
 
 // ── 內建食物 ─────────────────────────────────────────────
