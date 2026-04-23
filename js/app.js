@@ -77,7 +77,11 @@ function setupTabs(){
   });
 }
 
-function todayStr(){return new Date().toISOString().slice(0,10);}
+function todayStr(){
+  const d = new Date();
+  const offset = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - offset).toISOString().slice(0,10);
+}
 
 function setHeaderDate(){
   const el=document.getElementById('headerDate');
