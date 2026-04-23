@@ -285,8 +285,51 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="js/config.js?v=21"></script>
-<script src="js/api.js?v=21"></script>
-<script src="js/app.js?v=21"></script>
+<!-- 編輯身體數據 Modal -->
+<div class="modal-overlay" id="editBodyStatModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">編輯身體數據</span>
+      <button class="modal-close" onclick="closeEditBodyStat()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editBsId">
+      <div class="modal-grid">
+        <div class="field-group" style="grid-column:span 2">
+          <label class="field-label">日期</label>
+          <input class="field-input" id="editBsDate" type="date">
+        </div>
+        <div class="field-group">
+          <label class="field-label">體重 (kg)</label>
+          <input class="field-input" id="editBsWeight" type="number" step="0.1" placeholder="48.4">
+        </div>
+        <div class="field-group">
+          <label class="field-label">體脂率 (%)</label>
+          <input class="field-input" id="editBsFat" type="number" step="0.1" placeholder="25.2">
+        </div>
+        <div class="field-group">
+          <label class="field-label">骨骼肌率 (%)</label>
+          <input class="field-input" id="editBsMuscle" type="number" step="0.1" placeholder="26.9">
+        </div>
+        <div class="field-group">
+          <label class="field-label">身高 (cm)</label>
+          <input class="field-input" id="editBsHeight" type="number" placeholder="162">
+        </div>
+        <div class="field-group" style="grid-column:span 2">
+          <label class="field-label">年齡</label>
+          <input class="field-input" id="editBsAge" type="number" placeholder="54">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeEditBodyStat()">取消</button>
+      <button class="btn-primary" onclick="saveEditBodyStat()">&#x1F4BE; 儲存</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/config.js?v=23"></script>
+<script src="js/api.js?v=23"></script>
+<script src="js/app.js?v=23"></script>
 </body>
 </html>
