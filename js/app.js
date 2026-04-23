@@ -560,8 +560,11 @@ window.calcStats=function(){
     ['建議每日攝取',`<span class="res-hl">${finalKcal} kcal</span>`],
   ].map(([l,v])=>`<div class="result-row"><span class="res-label">${l}</span><span class="res-val">${v}</span></div>`).join('');
 
-  // 套用到目標
-  STATE.target.kcal=finalKcal;
+  // 套用到目標，三大營養素按比例自動連動
+  STATE.target.kcal    = finalKcal;
+  STATE.target.protein = Math.round(finalKcal * 0.27 / 4);
+  STATE.target.carb    = Math.round(finalKcal * 0.48 / 4);
+  STATE.target.fat     = Math.round(finalKcal * 0.25 / 9);
 
   const gw=+document.getElementById('g_weight')?.value||STATE.goal.weight;
   const gfp=+document.getElementById('g_fat')?.value||STATE.goal.fatPct;
