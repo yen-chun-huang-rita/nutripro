@@ -201,6 +201,7 @@ window.filterFood=function(){
   const tbody=document.getElementById('foodTbody');
   if(!tbody)return;
   tbody.innerHTML=data.map(f=>`<tr>
+    <td><input type="checkbox" class="food-cb" value="${f.id}" onchange="updateBatchBar()"></td>
     <td class="ft-name">${f.name}</td>
     <td style="color:var(--ink-faint);font-size:14px">${f.unit}</td>
     <td><span class="kcal-badge">${f.kcal}</span></td>
@@ -211,6 +212,43 @@ window.filterFood=function(){
       <button class="btn-icon del"  onclick="confirmDeleteFood('${f.id}','${f.name}')" title="刪除">🗑️</button>
     </div></td>
   </tr>`).join('');
+  updateBatchBar();
+};
+
+window.toggleSelectAll=function(cb){
+  document.querySelectorAll('.food-cb').forEach(c=>c.checked=cb.checked);
+  updateBatchBar();
+};
+
+window.updateBatchBar=function(){
+  const checked=document.querySelectorAll('.food-cb:checked');
+  const bar=document.getElementById('batchBar');
+  const countEl=document.getElementById('batchCount');
+  if(bar) bar.style.display=checked.length>0?'flex':'none';
+  if(countEl) countEl.textContent=`已選 ${checked.length} 項`;
+};
+
+window.batchDeleteFoods=async function(){
+  const checked=[...document.querySelectorAll('.food-cb:checked')];
+  if(!checked.length)return;
+  const ids=checked.map(c=>c.value);
+  const names=ids.map(id=>STATE.foods.find(f=>f.id===id)?.name||id);
+  document.getElementById('confirmMsg').textContent=`確定要刪除這 ${ids.length} 項食物嗎？`;
+  document.getElementById('confirmModal').classList.add('open');
+  document.getElementById('confirmOkBtn').onclick=async()=>{
+    closeConfirm();
+    showToast(`刪除中，共 ${ids.length} 筆...`,'info',10000);
+    let done=0;
+    for(const id of ids){
+      try{
+        await API.deleteFood(id);
+        STATE.foods=STATE.foods.filter(f=>f.id!==id);
+        done++;
+      }catch(e){}
+    }
+    renderFoodTable();
+    showToast(`已刪除 ${done} 項食物`,'success');
+  };
 };
 
 function renderFoodTable(){buildFilterBtns();filterFood();}
@@ -560,11 +598,8 @@ window.calcStats=function(){
     ['建議每日攝取',`<span class="res-hl">${finalKcal} kcal</span>`],
   ].map(([l,v])=>`<div class="result-row"><span class="res-label">${l}</span><span class="res-val">${v}</span></div>`).join('');
 
-  // 套用到目標，三大營養素按比例自動連動
-  STATE.target.kcal    = finalKcal;
-  STATE.target.protein = Math.round(finalKcal * 0.27 / 4);
-  STATE.target.carb    = Math.round(finalKcal * 0.48 / 4);
-  STATE.target.fat     = Math.round(finalKcal * 0.25 / 9);
+  // 套用到目標
+  STATE.target.kcal=finalKcal;
 
   const gw=+document.getElementById('g_weight')?.value||STATE.goal.weight;
   const gfp=+document.getElementById('g_fat')?.value||STATE.goal.fatPct;
