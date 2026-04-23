@@ -101,10 +101,17 @@
         <input class="search-input" id="foodSearch" type="text" placeholder="搜尋食物名稱或類別..." oninput="filterFood()">
       </div>
       <div class="filter-row" id="filterRow"></div>
+      <!-- 批量刪除列 -->
+      <div id="batchBar" style="display:none;align-items:center;gap:12px;padding:10px 14px;background:var(--red-pale);border-radius:var(--r);margin-bottom:10px;border:1px solid #f5c0bb">
+        <span id="batchCount" style="font-size:15px;font-weight:600;color:var(--red)"></span>
+        <button class="btn-danger" style="padding:7px 16px;font-size:14px" onclick="batchDeleteFoods()">🗑️ 批量刪除</button>
+        <button class="btn-secondary" style="padding:7px 16px;font-size:14px" onclick="document.querySelectorAll('.food-cb').forEach(c=>c.checked=false);updateBatchBar()">取消選取</button>
+      </div>
       <div class="table-wrap">
         <table class="data-table" id="foodTable">
           <thead>
             <tr>
+              <th><input type="checkbox" id="selectAllCb" onchange="toggleSelectAll(this)" title="全選"></th>
               <th>食物名稱</th><th>份量基準</th><th>熱量</th>
               <th>蛋白質</th><th>碳水</th><th>纖維</th><th>脂肪</th>
               <th>類別</th><th>操作</th>
@@ -328,8 +335,8 @@
   </div>
 </div>
 
-<script src="js/config.js?v=23"></script>
-<script src="js/api.js?v=23"></script>
-<script src="js/app.js?v=23"></script>
+<script src="js/config.js?v=24"></script>
+<script src="js/api.js?v=24"></script>
+<script src="js/app.js?v=24"></script>
 </body>
 </html>
