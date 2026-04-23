@@ -56,10 +56,10 @@
         </div>
       </div>
       <div class="card">
-  <div class="card-header"><span class="card-title">歷史體重記錄</span></div>
-  <div class="chart-wrap h200"><canvas id="historyChart" role="img" aria-label="歷史體重圖"></canvas></div>
-  <div id="bodyStatTable" style="overflow-x:auto;margin-top:12px"></div>
-</div>
+        <div class="card-header"><span class="card-title">三大營養素</span></div>
+        <div class="macro-legend" id="macroLegend"></div>
+        <div class="chart-wrap h200"><canvas id="macroChart" role="img" aria-label="營養素圓餅圖"></canvas></div>
+      </div>
     </div>
     <div class="dash-2col">
       <div class="card">
@@ -152,22 +152,27 @@
 
   <!-- ── 身體數據 ── -->
   <section id="tab-stats" class="tab-panel">
+
     <div class="dash-2col">
       <div class="card">
-        <div class="card-header"><span class="card-title">目前身體數據</span></div>
+        <div class="card-header">
+          <span class="card-title">身體數據記錄</span>
+          <input type="date" id="bodyStatDate" class="date-input">
+        </div>
         <div class="stats-form" id="currentForm"></div>
         <div class="section-label" style="margin-top:16px">代謝分析</div>
         <div id="currentResults"></div>
-        <button class="btn-primary" style="margin-top:12px;width:100%" onclick="saveBodyStat()">💾 儲存今日數據</button>
+        <button class="btn-primary" style="margin-top:12px;width:100%" onclick="saveBodyStat()">&#x1F4BE; 儲存數據</button>
       </div>
       <div class="card">
         <div class="card-header"><span class="card-title">90天目標設定</span></div>
         <div class="stats-form" id="goalForm"></div>
         <div class="section-label" style="margin-top:16px">目標分析</div>
         <div id="goalResults"></div>
-        <button class="btn-secondary" style="margin-top:12px;width:100%" onclick="saveGoalSettings()">💾 儲存目標設定</button>
+        <button class="btn-secondary" style="margin-top:12px;width:100%" onclick="saveGoalSettings()">&#x1F4BE; 儲存目標設定</button>
       </div>
     </div>
+
     <div class="card">
       <div class="card-header">
         <span class="card-title">體組成變化預測</span>
@@ -175,10 +180,34 @@
       </div>
       <div class="chart-wrap h240"><canvas id="compChart" role="img" aria-label="體組成預測圖"></canvas></div>
     </div>
+
     <div class="card">
-      <div class="card-header"><span class="card-title">歷史體重記錄</span></div>
-      <div class="chart-wrap h200"><canvas id="historyChart" role="img" aria-label="歷史體重圖"></canvas></div>
+      <div class="card-header"><span class="card-title">歷史體重 &#xFF06; 骨骼肌率趨勢</span></div>
+      <div class="chart-wrap h220"><canvas id="historyChart" role="img" aria-label="歷史體重骨骼肌率圖"></canvas></div>
     </div>
+
+    <div class="card">
+      <div class="card-header" style="cursor:pointer" onclick="toggleBodyStatTable()">
+        <span class="card-title">歷史數據記錄</span>
+        <div style="display:flex;gap:10px;align-items:center">
+          <select class="date-input" id="filterYear" style="width:100px;font-size:14px" onchange="renderBodyStatTable()" onclick="event.stopPropagation()">
+            <option value="">全部年度</option>
+          </select>
+          <select class="date-input" id="filterMonth" style="width:90px;font-size:14px" onchange="renderBodyStatTable()" onclick="event.stopPropagation()">
+            <option value="">全部月份</option>
+            <option value="01">1月</option><option value="02">2月</option>
+            <option value="03">3月</option><option value="04">4月</option>
+            <option value="05">5月</option><option value="06">6月</option>
+            <option value="07">7月</option><option value="08">8月</option>
+            <option value="09">9月</option><option value="10">10月</option>
+            <option value="11">11月</option><option value="12">12月</option>
+          </select>
+          <span id="bodyStatToggleIcon" style="font-size:18px;color:var(--ink-faint)">&#x25BC;</span>
+        </div>
+      </div>
+      <div id="bodyStatTable" style="overflow-x:auto"></div>
+    </div>
+
   </section>
 
 </main>
@@ -256,7 +285,8 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="js/config.js?v=20"></script>
-<script src="js/api.js?v=20"></script>
-<script src="js/app.js?v=20"></script></body>
+<script src="js/config.js?v=21"></script>
+<script src="js/api.js?v=21"></script>
+<script src="js/app.js?v=21"></script>
+</body>
 </html>
