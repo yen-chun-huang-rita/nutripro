@@ -641,10 +641,27 @@ window.saveBodyStat=async function(){
 window.saveGoalSettings=async function(){
   const adjInput=document.getElementById('kcalAdj');
   const adj=adjInput?+adjInput.value||0:0;
-  const s={goalWeight:STATE.goal.weight,goalFatPct:STATE.goal.fatPct,goalMusclePct:STATE.goal.musclePct,bodyHeight:STATE.body.height,bodyWeight:STATE.body.weight,bodyAge:STATE.body.age,bodyFatPct:STATE.body.fatPct,bodyMusclePct:STATE.body.musclePct,bodyActivity:STATE.body.activity,kcalAdj:adj};
-  await API.saveSettings(s);showToast('目標設定已儲存','success');
-};
 
+  // 根據目前 STATE.target 同步三大營養素到 Settings
+  const s={
+    goalWeight:STATE.goal.weight,
+    goalFatPct:STATE.goal.fatPct,
+    goalMusclePct:STATE.goal.musclePct,
+    bodyHeight:STATE.body.height,
+    bodyWeight:STATE.body.weight,
+    bodyAge:STATE.body.age,
+    bodyFatPct:STATE.body.fatPct,
+    bodyMusclePct:STATE.body.musclePct,
+    bodyActivity:STATE.body.activity,
+    kcalAdj:adj,
+    targetKcal:STATE.target.kcal,
+    targetProtein:STATE.target.protein,
+    targetCarb:STATE.target.carb,
+    targetFat:STATE.target.fat
+  };
+  await API.saveSettings(s);
+  showToast('目標設定已儲存','success');
+};
 let _bodyTableOpen = true;
 
 window.toggleBodyStatTable = function(){
