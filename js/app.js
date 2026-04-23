@@ -589,7 +589,7 @@ window.saveBodyStat=async function(){
   try{
     await API.saveBodyStat(stat);
     // 更新或新增到 bodyStats
-    const idx=STATE.bodyStats.findIndex(s=>s.date===date);
+    const idx=STATE.bodyStats.findIndex(s=>String(s.date).slice(0,10)===date);
     if(idx>=0) STATE.bodyStats[idx]=stat; else STATE.bodyStats.push(stat);
     showToast(`${date} 數據已儲存`,'success');
     renderHistoryChart();
@@ -620,7 +620,7 @@ window.toggleBodyStatTable = function(){
 function renderBodyStatYearOptions(){
   const sel = document.getElementById('filterYear');
   if(!sel) return;
-  const years = [...new Set(STATE.bodyStats.map(s => s.date.slice(0,4)))].sort((a,b)=>b-a);
+  const years = [...new Set(STATE.bodyStats.map(s => String(s.date).slice(0,4)))].sort((a,b)=>b-a);
   const cur = sel.value;
   sel.innerHTML = '<option value="">全部年度</option>' + years.map(y=>`<option value="${y}" ${y===cur?'selected':''}>${y}年</option>`).join('');
 }
@@ -633,9 +633,9 @@ function renderBodyStatTable(){
   const yr = document.getElementById('filterYear')?.value||'';
   const mo = document.getElementById('filterMonth')?.value||'';
 
-  let stats=[...STATE.bodyStats].sort((a,b)=>b.date>a.date?1:-1);
-  if(yr) stats=stats.filter(s=>s.date.startsWith(yr));
-  if(mo) stats=stats.filter(s=>s.date.slice(5,7)===mo);
+  let stats=[...STATE.bodyStats].sort((a,b)=>(String(b.date).slice(0,10))>(String(a.date).slice(0,10))?1:-1);
+  if(yr) stats=stats.filter(s=>String(s.date).slice(0,4)===yr);
+  if(mo) stats=stats.filter(s=>String(s.date).slice(5,7)===mo);
 
   if(!stats.length){
     el.innerHTML='<p style="color:var(--ink-faint);font-size:14px;padding:12px 0">此區間無數據</p>';
@@ -643,22 +643,89 @@ function renderBodyStatTable(){
   }
   el.innerHTML=`<div class="table-wrap"><table class="data-table">
     <thead><tr>
-      <th>日期</th><th>體重 (kg)</th><th>體脂率 (%)</th><th>骨骼肌率 (%)</th><th>BMI</th>
+      <th>日期</th><th>體重 (kg)</th><th>體脂率 (%)</th><th>骨骼肌率 (%)</th><th>BMI</th><th>操作</th>
     </tr></thead>
     <tbody>${stats.map(s=>{
       const h=+s.height||STATE.body.height||162;
       const bmi=h?(+s.weight/((h/100)**2)).toFixed(1):'-';
       const bmiCls=bmi==='-'?'':+bmi<18.5?'color:var(--blue)':+bmi<24?'color:var(--green)':+bmi<27?'color:var(--amber)':'color:var(--red)';
+      const dateStr=String(s.date).slice(0,10);
+      const sid=s.id||'';
       return `<tr>
-        <td style="font-weight:500">${s.date}</td>
+        <td style="font-weight:500">${dateStr}</td>
         <td>${s.weight||'-'}</td>
         <td>${s.fatPct||'-'}</td>
         <td>${s.musclePct||'-'}</td>
         <td style="${bmiCls};font-weight:600">${bmi}</td>
+        <td><div class="action-btns">
+          <button class="btn-icon edit" onclick="openEditBodyStat('${sid}')" title="編輯">✏️</button>
+          <button class="btn-icon del"  onclick="confirmDeleteBodyStat('${sid}','${dateStr}')" title="刪除">🗑️</button>
+        </div></td>
       </tr>`;
     }).join('')}</tbody>
   </table></div>`;
 }
+
+
+// ── 身體數據 編輯/刪除 ────────────────────────────────────
+window.openEditBodyStat = function(id) {
+  const s = STATE.bodyStats.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('editBsId').value = s.id;
+  document.getElementById('editBsDate').value = String(s.date).slice(0,10);
+  document.getElementById('editBsWeight').value = s.weight||'';
+  document.getElementById('editBsFat').value = s.fatPct||'';
+  document.getElementById('editBsMuscle').value = s.musclePct||'';
+  document.getElementById('editBsHeight').value = s.height||STATE.body.height||'';
+  document.getElementById('editBsAge').value = s.age||STATE.body.age||'';
+  document.getElementById('editBodyStatModal').classList.add('open');
+};
+
+window.closeEditBodyStat = function() {
+  document.getElementById('editBodyStatModal').classList.remove('open');
+};
+
+window.saveEditBodyStat = async function() {
+  const id = document.getElementById('editBsId').value;
+  const stat = {
+    id,
+    date: document.getElementById('editBsDate').value,
+    weight: +document.getElementById('editBsWeight').value,
+    fatPct: +document.getElementById('editBsFat').value,
+    musclePct: +document.getElementById('editBsMuscle').value,
+    height: +document.getElementById('editBsHeight').value||STATE.body.height,
+    age: +document.getElementById('editBsAge').value||STATE.body.age,
+    note: ''
+  };
+  if (!stat.date || !stat.weight) { showToast('請填寫日期和體重', 'error'); return; }
+  try {
+    await API.saveBodyStatUpdate(stat);
+    const idx = STATE.bodyStats.findIndex(x => x.id === id);
+    if (idx >= 0) STATE.bodyStats[idx] = stat;
+    closeEditBodyStat();
+    showToast('數據已更新', 'success');
+    renderHistoryChart();
+    renderBodyStatTable();
+    renderDashboard();
+  } catch(e) { showToast('更新失敗：' + e.message, 'error'); }
+};
+
+window.confirmDeleteBodyStat = function(id, dateStr) {
+  document.getElementById('confirmMsg').textContent = `確定要刪除 ${dateStr} 的身體數據嗎？`;
+  document.getElementById('confirmModal').classList.add('open');
+  document.getElementById('confirmOkBtn').onclick = async () => {
+    try {
+      await API.deleteBodyStat(id);
+      STATE.bodyStats = STATE.bodyStats.filter(x => x.id !== id);
+      showToast('已刪除', 'success');
+      renderHistoryChart();
+      renderBodyStatTable();
+      renderBodyStatYearOptions();
+      renderDashboard();
+    } catch(e) { showToast('刪除失敗：' + e.message, 'error'); }
+    closeConfirm();
+  };
+};
 
 // ══════════════════════════════════════════════════════════
 //  DASHBOARD
@@ -736,7 +803,7 @@ function renderHistoryChart(){
   destroyChart('history');const el=document.getElementById('historyChart');if(!el)return;
   const stats=[...STATE.bodyStats].sort((a,b)=>a.date>b.date?1:-1).slice(-30);
   if(!stats.length)return;
-  const labels=stats.map(s=>s.date.slice(5)); // MM-DD
+  const labels=stats.map(s=>String(s.date).slice(0,10).slice(5)); // MM-DD
   CHARTS.history=new Chart(el,{type:'line',data:{labels,datasets:[
     {label:'體重(kg)',data:stats.map(s=>+s.weight||null),borderColor:'#2d9e6e',backgroundColor:'rgba(45,158,110,.08)',yAxisID:'y',tension:.4,fill:true,pointRadius:4,pointBackgroundColor:'#2d9e6e'},
     {label:'體脂率(%)',data:stats.map(s=>+s.fatPct||null),borderColor:'#e87070',backgroundColor:'transparent',yAxisID:'y2',tension:.4,pointRadius:3},
