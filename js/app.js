@@ -598,8 +598,11 @@ window.calcStats=function(){
     ['建議每日攝取',`<span class="res-hl">${finalKcal} kcal</span>`],
   ].map(([l,v])=>`<div class="result-row"><span class="res-label">${l}</span><span class="res-val">${v}</span></div>`).join('');
 
-  // 套用到目標
-  STATE.target.kcal=finalKcal;
+  // 套用到目標，三大營養素按比例自動連動（蛋白27% 碳水48% 脂肪25%）
+  STATE.target.kcal    = finalKcal;
+  STATE.target.protein = Math.round(finalKcal * 0.27 / 4);
+  STATE.target.carb    = Math.round(finalKcal * 0.48 / 4);
+  STATE.target.fat     = Math.round(finalKcal * 0.25 / 9);
 
   const gw=+document.getElementById('g_weight')?.value||STATE.goal.weight;
   const gfp=+document.getElementById('g_fat')?.value||STATE.goal.fatPct;
@@ -641,8 +644,6 @@ window.saveBodyStat=async function(){
 window.saveGoalSettings=async function(){
   const adjInput=document.getElementById('kcalAdj');
   const adj=adjInput?+adjInput.value||0:0;
-
-  // 根據目前 STATE.target 同步三大營養素到 Settings
   const s={
     goalWeight:STATE.goal.weight,
     goalFatPct:STATE.goal.fatPct,
@@ -662,6 +663,7 @@ window.saveGoalSettings=async function(){
   await API.saveSettings(s);
   showToast('目標設定已儲存','success');
 };
+
 let _bodyTableOpen = true;
 
 window.toggleBodyStatTable = function(){
