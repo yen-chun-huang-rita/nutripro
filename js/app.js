@@ -793,7 +793,7 @@ window.confirmDeleteBodyStat = function(id, dateStr) {
 // ══════════════════════════════════════════════════════════
 function renderDashboard(){
   const tot=calcTotals(getTodayLogs()),B=STATE.body,T=STATE.target;
-  const bmr=Math.round(10*B.weight+6.25*B.height-5*B.age-161),tdee=Math.round(bmr*B.activity),rem=Math.max(0,T.kcal-tot.kcal);
+  const bmr=Math.round(10*w+6.25*h-5*a-161),tdee=Math.round(bmr*act),rec=tdee;
   const mg=document.getElementById('dashMetrics');
   if(mg)mg.innerHTML=[
     {label:'今日攝取',val:Math.round(tot.kcal),       unit:'kcal',sub:`目標 ${T.kcal} kcal`,   cls:'green'},
