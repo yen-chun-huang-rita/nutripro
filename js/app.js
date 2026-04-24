@@ -77,11 +77,7 @@ function setupTabs(){
   });
 }
 
-function todayStr(){
-  const d = new Date();
-  const offset = d.getTimezoneOffset() * 60000;
-  return new Date(d.getTime() - offset).toISOString().slice(0,10);
-}
+function todayStr(){return new Date().toISOString().slice(0,10);}
 
 function setHeaderDate(){
   const el=document.getElementById('headerDate');
@@ -584,12 +580,12 @@ window.calcStats=function(){
   const mp=+document.getElementById('s_muscle')?.value||STATE.body.musclePct;
   const act=+document.getElementById('s_activity')?.value||STATE.body.activity;
   STATE.body={height:h,weight:w,age:a,fatPct:fp,musclePct:mp,activity:act};
-  const bmr=Math.round(10*w+6.25*h-5*a-161),tdee=Math.round(bmr*act),rec=Math.round(tdee-200);
+  const bmr=Math.round(10*w+6.25*h-5*a-161),tdee=Math.round(bmr*act);
 
-  // 讀取使用者自訂調整值（若有）
+  // 調整值：負數代表赤字（減重），正數代表盈餘（增重），0代表維持
   const adjInput=document.getElementById('kcalAdj');
   const adj=adjInput?+adjInput.value||0:0;
-  const finalKcal=rec+adj;
+  const finalKcal=tdee+adj;
 
   const cr=document.getElementById('currentResults');
   if(cr)cr.innerHTML=[
@@ -598,11 +594,11 @@ window.calcStats=function(){
     ['脂肪重量',`${(w*fp/100).toFixed(1)} kg`],
     ['骨骼肌重量',`${(w*mp/100).toFixed(1)} kg`],
     ['去脂體重',`${(w*(1-fp/100)).toFixed(1)} kg`],
-    ['調整值',`<div class="kcal-adj-row"><span class="adj-hint">在建議值基礎上微調（正/負）</span><input id="kcalAdj" class="field-input adj-input" type="number" value="${adj}" step="50" placeholder="0" oninput="calcStats()"> kcal</div>`],
+    ['每日熱量赤字/盈餘',`<div class="kcal-adj-row"><span class="adj-hint">負數＝赤字減重，0＝維持，正數＝盈餘增肌</span><input id="kcalAdj" class="field-input adj-input" type="number" value="${adj}" placeholder="例：-26" oninput="calcStats()"> kcal</div>`],
     ['建議每日攝取',`<span class="res-hl">${finalKcal} kcal</span>`],
   ].map(([l,v])=>`<div class="result-row"><span class="res-label">${l}</span><span class="res-val">${v}</span></div>`).join('');
 
-  // 套用到目標，三大營養素按比例自動連動（蛋白27% 碳水48% 脂肪25%）
+  // 三大營養素按比例自動連動（蛋白27% 碳水48% 脂肪25%）
   STATE.target.kcal    = finalKcal;
   STATE.target.protein = Math.round(finalKcal * 0.27 / 4);
   STATE.target.carb    = Math.round(finalKcal * 0.48 / 4);
@@ -616,11 +612,11 @@ window.calcStats=function(){
   const def90=Math.round(+wD*7700/90),dailyT=Math.round(tdee-def90);
   const gr=document.getElementById('goalResults');
   if(gr)gr.innerHTML=[
-    ['體重變化',`-${wD} kg → ${gw} kg`],
+    ['體重變化',`${wD>0?'-':''}${Math.abs(wD)} kg → ${gw} kg`],
     ['體脂率變化',`-${fD}% → ${gfp}%`],
     ['骨骼肌率增加',`+${mD}% → ${gmp}%`],
-    ['每日熱量赤字',`${def90} kcal`],
-    ['90天每日攝取',`<span class="res-hl">${dailyT} kcal</span>`],
+    ['達標所需每日赤字',`${def90} kcal`],
+    ['90天每日建議攝取',`<span class="res-hl">${dailyT} kcal</span>`],
   ].map(([l,v])=>`<div class="result-row"><span class="res-label">${l}</span><span class="res-val">${v}</span></div>`).join('');
   renderCompChart(fp,gfp,mp,gmp);renderHistoryChart();
 };
@@ -793,7 +789,7 @@ window.confirmDeleteBodyStat = function(id, dateStr) {
 // ══════════════════════════════════════════════════════════
 function renderDashboard(){
   const tot=calcTotals(getTodayLogs()),B=STATE.body,T=STATE.target;
-  const bmr=Math.round(10*w+6.25*h-5*a-161),tdee=Math.round(bmr*act),rec=tdee;
+  const bmr=Math.round(10*B.weight+6.25*B.height-5*B.age-161),tdee=Math.round(bmr*B.activity),rem=Math.max(0,T.kcal-tot.kcal);
   const mg=document.getElementById('dashMetrics');
   if(mg)mg.innerHTML=[
     {label:'今日攝取',val:Math.round(tot.kcal),       unit:'kcal',sub:`目標 ${T.kcal} kcal`,   cls:'green'},
