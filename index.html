@@ -169,6 +169,24 @@
         <div class="stats-form" id="currentForm"></div>
         <div class="section-label" style="margin-top:16px">代謝分析</div>
         <div id="currentResults"></div>
+        <!-- 調整值和建議攝取：靜態元素，不被 calcStats 重建 -->
+        <div class="result-row" style="margin-top:4px">
+          <span class="res-label">每日熱量赤字/盈餘</span>
+          <span class="res-val" style="display:flex;align-items:center;gap:8px">
+            <input id="kcalAdj" class="field-input adj-input" type="number" value="0"
+              placeholder="例：-26" style="width:100px;text-align:center"
+              oninput="calcStats()">
+            <span style="color:var(--ink-faint);font-size:14px">kcal（負＝赤字，正＝盈餘）</span>
+          </span>
+        </div>
+        <div class="result-row">
+          <span class="res-label" style="font-weight:600;color:var(--ink)">建議每日攝取</span>
+          <span class="res-val"><span id="recKcalVal" class="res-hl">--</span></span>
+        </div>
+        <div class="result-row" style="margin-bottom:8px">
+          <span class="res-label" style="font-size:13px;color:var(--ink-faint)">三大營養素目標</span>
+          <span id="macroTargetVal" style="font-size:14px;color:var(--ink-mid)">--</span>
+        </div>
         <button class="btn-primary" style="margin-top:12px;width:100%" onclick="saveBodyStat()">&#x1F4BE; 儲存數據</button>
       </div>
       <div class="card">
@@ -335,8 +353,8 @@
   </div>
 </div>
 
-<script src="js/config.js?v=27"></script>
-<script src="js/api.js?v=27"></script>
-<script src="js/app.js?v=27"></script>
+<script src="js/config.js?v=28"></script>
+<script src="js/api.js?v=28"></script>
+<script src="js/app.js?v=28"></script>
 </body>
 </html>
