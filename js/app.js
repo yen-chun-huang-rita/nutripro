@@ -556,6 +556,8 @@ function renderStatsForm(){
   const dateEl=document.getElementById('bodyStatDate');
   if(dateEl&&!dateEl.value) dateEl.value=todayStr();
   if(!cf||!gf)return;
+  // 保留已有的 kcalAdj 值（不重建輸入框）
+  const existingAdj=document.getElementById('kcalAdj')?.value||'0';
   cf.innerHTML=`
     <div class="field-group"><label class="field-label">身高 (cm)</label><input class="field-input" id="s_height" type="number" value="${B.height||''}" placeholder="例：162" oninput="calcStats()"></div>
     <div class="field-group"><label class="field-label">體重 (kg)</label><input class="field-input" id="s_weight" type="number" value="${B.weight||''}" step="0.1" placeholder="例：48.4" oninput="calcStats()"></div>
@@ -585,11 +587,12 @@ window.calcStats=function(){
   STATE.body={height:h,weight:w,age:a,fatPct:fp,musclePct:mp,activity:act};
   const bmr=Math.round(10*w+6.25*h-5*a-161),tdee=Math.round(bmr*act);
 
-  // 調整值：負數代表赤字（減重），正數代表盈餘（增重），0代表維持
+  // 調整值從固定 DOM 讀取（不在渲染區塊內，不會被重建）
   const adjInput=document.getElementById('kcalAdj');
   const adj=adjInput?+adjInput.value||0:0;
   const finalKcal=tdee+adj;
 
+  // 只渲染不含調整值輸入框的靜態結果
   const cr=document.getElementById('currentResults');
   if(cr)cr.innerHTML=[
     ['基礎代謝率 (BMR)',`${bmr} kcal`],
@@ -597,15 +600,21 @@ window.calcStats=function(){
     ['脂肪重量',`${(w*fp/100).toFixed(1)} kg`],
     ['骨骼肌重量',`${(w*mp/100).toFixed(1)} kg`],
     ['去脂體重',`${(w*(1-fp/100)).toFixed(1)} kg`],
-    ['每日熱量赤字/盈餘',`<div class="kcal-adj-row"><span class="adj-hint">負數＝赤字減重，0＝維持，正數＝盈餘增肌</span><input id="kcalAdj" class="field-input adj-input" type="number" value="${adj}" placeholder="例：-26" onchange="calcStats()" onblur="calcStats()"> kcal</div>`],
-    ['建議每日攝取',`<span class="res-hl">${finalKcal} kcal</span>`],
   ].map(([l,v])=>`<div class="result-row"><span class="res-label">${l}</span><span class="res-val">${v}</span></div>`).join('');
+
+  // 更新建議攝取顯示（獨立元素，不重建輸入框）
+  const recEl=document.getElementById('recKcalVal');
+  if(recEl) recEl.textContent=finalKcal+' kcal';
 
   // 三大營養素按比例自動連動（蛋白27% 碳水48% 脂肪25%）
   STATE.target.kcal    = finalKcal;
   STATE.target.protein = Math.round(finalKcal * 0.27 / 4);
   STATE.target.carb    = Math.round(finalKcal * 0.48 / 4);
   STATE.target.fat     = Math.round(finalKcal * 0.25 / 9);
+
+  // 更新三大營養素目標顯示
+  const macroEl=document.getElementById('macroTargetVal');
+  if(macroEl) macroEl.innerHTML=`蛋白 <b>${STATE.target.protein}g</b> ∙ 碳水 <b>${STATE.target.carb}g</b> ∙ 脂肪 <b>${STATE.target.fat}g</b>`;
 
   const gw=+document.getElementById('g_weight')?.value||STATE.goal.weight;
   const gfp=+document.getElementById('g_fat')?.value||STATE.goal.fatPct;
@@ -615,7 +624,7 @@ window.calcStats=function(){
   const def90=Math.round(+wD*7700/90),dailyT=Math.round(tdee-def90);
   const gr=document.getElementById('goalResults');
   if(gr)gr.innerHTML=[
-    ['體重變化',`${wD>0?'-':''}${Math.abs(wD)} kg → ${gw} kg`],
+    ['體重變化',`${+wD>0?'-':''}${Math.abs(+wD)} kg → ${gw} kg`],
     ['體脂率變化',`-${fD}% → ${gfp}%`],
     ['骨骼肌率增加',`+${mD}% → ${gmp}%`],
     ['達標所需每日赤字',`${def90} kcal`],
