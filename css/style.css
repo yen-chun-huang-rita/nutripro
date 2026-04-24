@@ -18,7 +18,7 @@
   --font-serif:'DM Serif Display',serif;
 }
 
-/* ���� �箇�摮烾��曉之嚗�14px �� 16px ���� */
+/* ── 基礎字體放大：14px → 16px ── */
 body{font-family:var(--font);background:var(--surface);color:var(--ink);font-size:16px;line-height:1.65;min-height:100vh;}
 
 .app-header{background:var(--hue,var(--green));padding:20px 28px 0;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.15);transition:background .4s;}
@@ -45,7 +45,7 @@ body{font-family:var(--font);background:var(--surface);color:var(--ink);font-siz
 .sync-dot.loading{background:#fbbf24;animation:pulse 1s infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
-/* ���� ��惜摮烾��曉之 ���� */
+/* ── 頁籤字體放大 ── */
 .nav-tabs{display:flex;gap:2px;}
 .nav-tab{padding:13px 24px;font-size:15px;font-weight:500;font-family:var(--font);border:none;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);cursor:pointer;border-radius:10px 10px 0 0;transition:all .2s;letter-spacing:.01em;}
 .nav-tab:hover{background:rgba(255,255,255,.18);color:#fff;}
@@ -142,7 +142,7 @@ body{font-family:var(--font);background:var(--surface);color:var(--ink);font-siz
 .filter-btn{padding:6px 16px;font-size:14px;font-weight:500;border:1px solid var(--border);border-radius:20px;background:var(--white);color:var(--ink-light);cursor:pointer;transition:all .15s;font-family:var(--font);}
 .filter-btn:hover,.filter-btn.active{background:var(--green);color:#fff;border-color:var(--green);}
 
-/* ���� 銵券�摮烾��曉之 ���� */
+/* ── 表頭字體放大 ── */
 .table-wrap{overflow-x:auto;}
 table.data-table{width:100%;border-collapse:collapse;font-size:15px;}
 table.data-table thead th{text-align:left;padding:11px 13px;font-size:13px;font-weight:600;color:var(--ink-mid);text-transform:uppercase;letter-spacing:.05em;background:var(--surface);border-bottom:1px solid var(--border);white-space:nowrap;}
@@ -152,24 +152,24 @@ table.data-table tbody tr:hover td{background:var(--green-pale);}
 .ft-name{font-weight:500;color:var(--ink);font-size:15px;}
 .kcal-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:14px;font-weight:600;background:var(--green-pale);color:var(--green);}
 .cat-pill{display:inline-block;padding:3px 10px;border-radius:12px;font-size:13px;font-weight:500;}
-.cat-�讠蒾鞈泯background:#e8f0f8;color:#1d5c8a;}
-.cat-�函�{background:#fdf0d5;color:#9e6b1a;}
-.cat-�祈�{background:#e8f5ee;color:#1a6b4a;}
-.cat-瘞湔�{background:#fdecea;color:#b03a2e;}
-.cat-銋唾ˊ��{background:#f5e6fa;color:#7b2d9e;}
-.cat-���{background:#fff3e0;color:#b25a1a;}
-.cat-瘝寡�{background:#f0f0f0;color:#555;}
-.cat-憌脣�{background:#e0f4ff;color:#0e6e9e;}
-.cat-鞊��{background:#e8f5ee;color:#1a6b4a;}
-.cat-���{background:#f5ede8;color:#8b4513;}
-.cat-瘚瑁鉟{background:#e0f0f5;color:#0a7080;}
-.cat-�嗡�{background:#f0f0f0;color:#666;}
+.cat-蛋白質{background:#e8f0f8;color:#1d5c8a;}
+.cat-全穀{background:#fdf0d5;color:#9e6b1a;}
+.cat-蔬菜{background:#e8f5ee;color:#1a6b4a;}
+.cat-水果{background:#fdecea;color:#b03a2e;}
+.cat-乳製品{background:#f5e6fa;color:#7b2d9e;}
+.cat-堅果{background:#fff3e0;color:#b25a1a;}
+.cat-油脂{background:#f0f0f0;color:#555;}
+.cat-飲品{background:#e0f4ff;color:#0e6e9e;}
+.cat-豆類{background:#e8f5ee;color:#1a6b4a;}
+.cat-菇類{background:#f5ede8;color:#8b4513;}
+.cat-海藻{background:#e0f0f5;color:#0a7080;}
+.cat-其他{background:#f0f0f0;color:#666;}
 .action-btns{display:flex;gap:6px;}
 .btn-icon{width:30px;height:30px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
 .btn-icon.edit:hover{background:var(--blue-pale);border-color:#b5d4f4;color:var(--blue);}
 .btn-icon.del:hover{background:var(--red-pale);border-color:#f5c0bb;color:var(--red);}
 
-/* ���� �臬枂�臬��厰� ���� */
+/* ── 匯出匯入按鈕 ── */
 .btn-export{padding:8px 16px;font-size:14px;font-weight:500;font-family:var(--font);background:var(--blue-pale);color:var(--blue);border:1px solid #b5d4f4;border-radius:8px;cursor:pointer;transition:all .15s;}
 .btn-export:hover{background:#d0e8f8;}
 .btn-import{padding:8px 16px;font-size:14px;font-weight:500;font-family:var(--font);background:var(--amber-pale);color:var(--amber);border:1px solid #e8d4a0;border-radius:8px;cursor:pointer;transition:all .15s;}
@@ -227,11 +227,15 @@ table.data-table tbody tr:hover td{background:var(--green-pale);}
 .res-val{font-size:15px;font-weight:600;color:var(--ink);}
 .res-hl{font-family:var(--font-serif);font-size:24px;color:var(--green);}
 
-/* ���� 隤踵㟲撱箄降�嘥��讐�頛詨�銵� ���� */
+/* ── 調整建議攝取量的輸入行 ── */
 .kcal-adj-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .adj-hint{font-size:13px;color:var(--ink-faint);font-weight:400;}
 .adj-input{width:90px;padding:6px 10px;font-size:15px;font-family:var(--font);border:1px solid var(--border);border-radius:8px;background:var(--white);color:var(--ink);text-align:center;}
 .adj-input:focus{outline:none;border-color:var(--green-l);}
+/* 隱藏數字輸入框的加減按鈕 */
+.adj-input::-webkit-outer-spin-button,
+.adj-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.adj-input{-moz-appearance:textfield;}
 
 .btn-primary{padding:10px 20px;font-size:15px;font-weight:600;font-family:var(--font);background:var(--green);color:#fff;border:none;border-radius:8px;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .btn-primary:hover{background:var(--green-l);}
