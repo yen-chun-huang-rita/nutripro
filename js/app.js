@@ -77,7 +77,10 @@ function setupTabs(){
   });
 }
 
-function todayStr(){return new Date().toISOString().slice(0,10);}
+function todayStr(){
+  const d=new Date();
+  return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+}
 
 function setHeaderDate(){
   const el=document.getElementById('headerDate');
@@ -594,7 +597,7 @@ window.calcStats=function(){
     ['脂肪重量',`${(w*fp/100).toFixed(1)} kg`],
     ['骨骼肌重量',`${(w*mp/100).toFixed(1)} kg`],
     ['去脂體重',`${(w*(1-fp/100)).toFixed(1)} kg`],
-    ['每日熱量赤字/盈餘',`<div class="kcal-adj-row"><span class="adj-hint">負數＝赤字減重，0＝維持，正數＝盈餘增肌</span><input id="kcalAdj" class="field-input adj-input" type="number" value="${adj}" placeholder="例：-26" oninput="calcStats()"> kcal</div>`],
+    ['每日熱量赤字/盈餘',`<div class="kcal-adj-row"><span class="adj-hint">負數＝赤字減重，0＝維持，正數＝盈餘增肌</span><input id="kcalAdj" class="field-input adj-input" type="number" value="${adj}" placeholder="例：-26" onchange="calcStats()" onblur="calcStats()"> kcal</div>`],
     ['建議每日攝取',`<span class="res-hl">${finalKcal} kcal</span>`],
   ].map(([l,v])=>`<div class="result-row"><span class="res-label">${l}</span><span class="res-val">${v}</span></div>`).join('');
 
