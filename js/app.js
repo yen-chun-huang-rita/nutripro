@@ -1138,56 +1138,35 @@ window.analyzeExercise = async function() {
   document.getElementById('analyzeBtn').textContent = '🔄 AI 分析中...';
 
   try {
-    let prompt = `你是一位運動科學專家。請分析以下運動菜單，估算：
-1. 總運動時間（分鐘）
-2. 消耗的卡路里（基於體重${STATE.body.weight||47}kg、年齡${STATE.body.age||54}歲的女性）
-3. 運動強度評估
-4. 簡短建議
-
-請用以下 JSON 格式回答（只回傳 JSON，不要其他文字）：
-{"durationMin": 數字, "caloriesBurned": 數字, "intensity": "低/中/高", "analysis": "簡短分析說明", "suggestion": "建議"}
-
-運動菜單：${textInput||'（見圖片）'}`;
-
     let base64 = '';
-    let messages;
     if (file) {
       base64 = await new Promise(resolve => {
         const reader = new FileReader();
         reader.onload = e => resolve(e.target.result.split(',')[1]);
         reader.readAsDataURL(file);
       });
-      const mediaType = file.type || 'image/jpeg';
-      messages = [{
-        role: 'user',
-        content: [
-          { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-          { type: 'text', text: prompt }
-        ]
-      }];
-    } else {
-      messages = [{ role: 'user', content: prompt }];
     }
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    // 透過 GAS 後端呼叫 Claude API（避免 CORS 限制）
+    const gasPayload = {
+      action: 'analyzeExercise',
+      description: textInput || '',
+      imageBase64: base64 || '',
+      imageType: file ? (file.type || 'image/jpeg') : '',
+      weight: STATE.body.weight || 47,
+      age: STATE.body.age || 54
+    };
+
+    const response = await fetch(CONFIG.GAS_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages
-      })
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(gasPayload)
     });
 
     const data = await response.json();
-    const text = data.content?.[0]?.text || '';
+    if (data.error) throw new Error(data.error);
 
-    let result;
-    try {
-      result = JSON.parse(text.replace(/```json|```/g, '').trim());
-    } catch(e) {
-      result = { durationMin: 0, caloriesBurned: 0, intensity: '未知', analysis: text, suggestion: '' };
-    }
+    let result = data.result || {};
 
     // 儲存記錄（imageUrl 已在上面讀取過，直接用 base64 變數）
     const log = {
