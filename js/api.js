@@ -229,11 +229,47 @@ const API = (() => {
     };
   }
 
+  // ════════════════════════════════════════════════════════
+  //  EXERCISE
+  // ════════════════════════════════════════════════════════
+  async function getExerciseForDate(date) {
+    try {
+      const data = await gasGet({ action: 'getExercise', date });
+      return data;
+    } catch(e) {
+      return JSON.parse(localStorage.getItem('nutripro_exercise_'+date)||'[]');
+    }
+  }
+
+  async function saveExercise(log) {
+    try {
+      const res = await gasPost({ action: 'saveExercise', log });
+      log.id = res.id;
+    } catch(e) {
+      if (!log.id) log.id = 'local_' + Date.now();
+    }
+    // 本地快取
+    const key = 'nutripro_exercise_' + log.date;
+    const all = JSON.parse(localStorage.getItem(key)||'[]');
+    const idx = all.findIndex(l => l.id === log.id);
+    if (idx >= 0) all[idx] = log; else all.push(log);
+    localStorage.setItem(key, JSON.stringify(all));
+    return log;
+  }
+
+  async function deleteExercise(id, date) {
+    try { await gasPost({ action: 'deleteExercise', id }); } catch(e) {}
+    const key = 'nutripro_exercise_' + date;
+    const all = JSON.parse(localStorage.getItem(key)||'[]').filter(l => l.id !== id);
+    localStorage.setItem(key, JSON.stringify(all));
+  }
+
   return {
     getFoods, addFood, updateFood, deleteFood,
     getLogsForDate, getLogRange, saveLog, deleteLog,
     getBodyStats, saveBodyStat, saveBodyStatUpdate, deleteBodyStat,
     getSettings, saveSettings,
+    getExerciseForDate, saveExercise, deleteExercise,
     lsGet, lsSet, LS,
   };
 })();
