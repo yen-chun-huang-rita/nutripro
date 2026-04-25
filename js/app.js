@@ -73,6 +73,7 @@ function setupTabs(){
       if(tab==='stats'){renderStatsForm();calcStats();}
       if(tab==='food') renderFoodTable();
       if(tab==='meal') renderMeals();
+      if(tab==='exercise'){const inp=document.getElementById('exDate');if(inp&&!inp.value)inp.value=todayStr();loadExerciseForDate();}
     });
   });
 }
@@ -1065,6 +1066,181 @@ function getBuiltinFoods(){
   ];
   return raw.map((f,i)=>({id:'b'+(i+1),name:f.n,unit:f.u,kcal:f.k,protein:f.p,carb:f.c,fiber:f.fi,fat:f.f,category:f.t}));
 }
+
+
+// ══════════════════════════════════════════════════════════
+//  EXERCISE
+// ══════════════════════════════════════════════════════════
+let exerciseState = { logs: [], date: todayStr(), analyzing: false };
+
+window.loadExerciseForDate = async function() {
+  const inp = document.getElementById('exDate');
+  if (inp) exerciseState.date = inp.value;
+  try {
+    exerciseState.logs = await API.getExerciseForDate(exerciseState.date);
+  } catch(e) { exerciseState.logs = []; }
+  renderExerciseLogs();
+  updateExerciseTDEE();
+};
+
+function renderExerciseLogs() {
+  const el = document.getElementById('exerciseLogs');
+  if (!el) return;
+  if (!exerciseState.logs.length) {
+    el.innerHTML = '<p style="color:var(--ink-faint);font-size:15px;padding:16px 0">尚無運動記錄，請輸入或上傳今日運動菜單</p>';
+    return;
+  }
+  el.innerHTML = exerciseState.logs.map(log => `
+    <div class="exercise-item">
+      <div class="exercise-header">
+        <div>
+          <div class="exercise-time">${log.durationMin ? log.durationMin + ' 分鐘' : ''}</div>
+          <div class="exercise-desc">${log.description||''}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="exercise-kcal">${log.caloriesBurned ? '🔥 ' + log.caloriesBurned + ' kcal' : ''}</div>
+          <button class="btn-icon del" onclick="deleteExerciseLog('${log.id}')" style="margin-top:6px">🗑️</button>
+        </div>
+      </div>
+      ${log.aiAnalysis ? `<div class="exercise-analysis">${log.aiAnalysis}</div>` : ''}
+      ${log.imageUrl ? `<img src="${log.imageUrl}" style="width:100%;border-radius:8px;margin-top:10px;max-height:200px;object-fit:cover">` : ''}
+    </div>
+  `).join('');
+}
+
+function updateExerciseTDEE() {
+  // 計算今日總消耗卡路里
+  const totalBurned = exerciseState.logs.reduce((sum, l) => sum + (+l.caloriesBurned||0), 0);
+  const el = document.getElementById('exerciseTotalBurned');
+  if (el) el.textContent = totalBurned + ' kcal';
+
+  // 更新 TDEE 顯示
+  const B = STATE.body;
+  const bmr = Math.round(10*B.weight + 6.25*B.height - 5*B.age - 161);
+  const baseTdee = Math.round(bmr * (B.activity||1.2));
+  const adjustedTdee = baseTdee + totalBurned;
+  const el2 = document.getElementById('exerciseAdjTdee');
+  if (el2) el2.textContent = adjustedTdee + ' kcal';
+}
+
+window.analyzeExercise = async function() {
+  const textInput = document.getElementById('exTextInput')?.value?.trim();
+  const fileInput = document.getElementById('exImageInput');
+  const file = fileInput?.files?.[0];
+
+  if (!textInput && !file) {
+    showToast('請輸入運動描述或上傳圖片', 'error');
+    return;
+  }
+
+  exerciseState.analyzing = true;
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('analyzeBtn').textContent = '🔄 AI 分析中...';
+
+  try {
+    let prompt = `你是一位運動科學專家。請分析以下運動菜單，估算：
+1. 總運動時間（分鐘）
+2. 消耗的卡路里（基於體重${STATE.body.weight||47}kg、年齡${STATE.body.age||54}歲的女性）
+3. 運動強度評估
+4. 簡短建議
+
+請用以下 JSON 格式回答（只回傳 JSON，不要其他文字）：
+{"durationMin": 數字, "caloriesBurned": 數字, "intensity": "低/中/高", "analysis": "簡短分析說明", "suggestion": "建議"}
+
+運動菜單：${textInput||'（見圖片）'}`;
+
+    let messages;
+    if (file) {
+      const base64 = await new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result.split(',')[1]);
+        reader.readAsDataURL(file);
+      });
+      const mediaType = file.type || 'image/jpeg';
+      messages = [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+          { type: 'text', text: prompt }
+        ]
+      }];
+    } else {
+      messages = [{ role: 'user', content: prompt }];
+    }
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages
+      })
+    });
+
+    const data = await response.json();
+    const text = data.content?.[0]?.text || '';
+
+    let result;
+    try {
+      result = JSON.parse(text.replace(/```json|```/g, '').trim());
+    } catch(e) {
+      result = { durationMin: 0, caloriesBurned: 0, intensity: '未知', analysis: text, suggestion: '' };
+    }
+
+    // 儲存記錄
+    const log = {
+      date: exerciseState.date,
+      description: textInput || '（圖片菜單）',
+      imageUrl: file ? `data:${file.type};base64,${await new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result.split(',')[1]);
+        reader.readAsDataURL(file);
+      })}` : '',
+      durationMin: result.durationMin || 0,
+      caloriesBurned: result.caloriesBurned || 0,
+      aiAnalysis: `強度：${result.intensity} ∙ ${result.analysis}${result.suggestion ? ' ∙ 建議：' + result.suggestion : ''}`
+    };
+
+    const saved = await API.saveExercise(log);
+    exerciseState.logs.push(saved);
+    renderExerciseLogs();
+    updateExerciseTDEE();
+
+    // 清空輸入
+    if (document.getElementById('exTextInput')) document.getElementById('exTextInput').value = '';
+    if (fileInput) fileInput.value = '';
+    document.getElementById('exImagePreview').innerHTML = '';
+
+    showToast(`分析完成！消耗約 ${result.caloriesBurned} kcal`, 'success', 4000);
+
+  } catch(e) {
+    showToast('分析失敗：' + e.message, 'error');
+  } finally {
+    exerciseState.analyzing = false;
+    document.getElementById('analyzeBtn').disabled = false;
+    document.getElementById('analyzeBtn').textContent = '🤖 AI 分析運動菜單';
+  }
+};
+
+window.deleteExerciseLog = async function(id) {
+  await API.deleteExercise(id, exerciseState.date);
+  exerciseState.logs = exerciseState.logs.filter(l => l.id !== id);
+  renderExerciseLogs();
+  updateExerciseTDEE();
+  showToast('已刪除', 'success');
+};
+
+window.previewExImage = function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const el = document.getElementById('exImagePreview');
+    if (el) el.innerHTML = `<img src="${ev.target.result}" style="max-width:100%;max-height:200px;border-radius:8px;margin-top:8px;object-fit:contain">`;
+  };
+  reader.readAsDataURL(file);
+};
 
 // ── 啟動 ────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded',()=>{
