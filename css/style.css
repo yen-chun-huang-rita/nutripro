@@ -21,7 +21,7 @@
 /* ── 基礎字體放大：14px → 16px ── */
 body{font-family:var(--font);background:var(--surface);color:var(--ink);font-size:16px;line-height:1.65;min-height:100vh;}
 
-.app-header{background:var(--hue,var(--green));padding:20px 28px 0;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.15);transition:background .4s;}
+..app-header{background:var(--hue,var(--green));padding:20px 28px 0;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.15);transition:background .4s;background-image:url('../images/header-bg.jpg');background-size:cover;background-position:center 40%;}
 .header-inner{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
 .brand{display:flex;align-items:center;gap:14px;}
 .brand-icon{width:48px;height:48px;border-radius:12px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
