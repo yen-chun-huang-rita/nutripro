@@ -519,7 +519,9 @@ window.addLog=async function(meal){
   const food=acSelected[meal];
   if(!food){showToast('請先選擇食物','error');return;}
   const qty=parseFloat(document.getElementById('qty-'+meal)?.value)||100;
-  const r=qty/100;
+  // 從 unit 解析基準克數（例如 "12g" → 12, "100g" → 100, "1顆50g" → 50）
+  const baseQty=parseFloat((food.unit||'100').match(/[\d.]+/g)?.pop())||100;
+  const r=qty/baseQty;
   const log={date:STATE.currentDate,meal,foodId:food.id,foodName:food.name,qty,
     kcal:+(food.kcal*r).toFixed(1),protein:+(food.protein*r).toFixed(1),
     carb:+(food.carb*r).toFixed(1),fat:+(food.fat*r).toFixed(1),water:0};
