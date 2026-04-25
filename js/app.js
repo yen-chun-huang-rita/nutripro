@@ -1149,9 +1149,10 @@ window.analyzeExercise = async function() {
 
 運動菜單：${textInput||'（見圖片）'}`;
 
+    let base64 = '';
     let messages;
     if (file) {
-      const base64 = await new Promise(resolve => {
+      base64 = await new Promise(resolve => {
         const reader = new FileReader();
         reader.onload = e => resolve(e.target.result.split(',')[1]);
         reader.readAsDataURL(file);
@@ -1188,15 +1189,11 @@ window.analyzeExercise = async function() {
       result = { durationMin: 0, caloriesBurned: 0, intensity: '未知', analysis: text, suggestion: '' };
     }
 
-    // 儲存記錄
+    // 儲存記錄（imageUrl 已在上面讀取過，直接用 base64 變數）
     const log = {
       date: exerciseState.date,
       description: textInput || '（圖片菜單）',
-      imageUrl: file ? `data:${file.type};base64,${await new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onload = e => resolve(e.target.result.split(',')[1]);
-        reader.readAsDataURL(file);
-      })}` : '',
+      imageUrl: file ? ('data:' + file.type + ';base64,' + base64) : '',
       durationMin: result.durationMin || 0,
       caloriesBurned: result.caloriesBurned || 0,
       aiAnalysis: `強度：${result.intensity} ∙ ${result.analysis}${result.suggestion ? ' ∙ 建議：' + result.suggestion : ''}`
