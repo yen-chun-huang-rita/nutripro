@@ -134,12 +134,44 @@ function setupColorPicker(){
   document.addEventListener('click',()=>palette.classList.remove('open'));
   palette.addEventListener('click',e=>e.stopPropagation());
   applyHeaderColor(STATE.headerColor);
+  // 套用上次儲存的背景圖片
+  const savedBg=localStorage.getItem('nutripro_header_bg');
+  if(savedBg) applyHeaderBg(savedBg);
 }
 
 function selectColor(color){
   STATE.headerColor=color; applyHeaderColor(color);
   API.saveSettings({headerColor:color});
 }
+
+// ── 表頭背景圖片 ────────────────────────────────────────
+window.changeHeaderBg=function(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    const dataUrl=ev.target.result;
+    applyHeaderBg(dataUrl);
+    localStorage.setItem('nutripro_header_bg',dataUrl);
+    showToast('表頭背景已更新','success');
+  };
+  reader.readAsDataURL(file);
+};
+
+function applyHeaderBg(dataUrl){
+  const h=document.getElementById('appHeader');
+  if(h){
+    h.style.backgroundImage=dataUrl?`url('${dataUrl}')`:'';
+    h.style.backgroundSize='cover';
+    h.style.backgroundPosition='center 40%';
+  }
+}
+
+window.clearHeaderBg=function(){
+  localStorage.removeItem('nutripro_header_bg');
+  applyHeaderBg('');
+  showToast('已恢復預設背景','info');
+};
 
 function applyHeaderColor(color){
   const h=document.getElementById('appHeader');
