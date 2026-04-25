@@ -28,7 +28,7 @@
       <div style="position:relative;display:flex;gap:6px">
         <button class="color-picker-btn" onclick="document.getElementById('headerBgInput').click()" title="更換表頭背景圖片">🖼️</button>
         <button class="color-picker-btn" onclick="clearHeaderBg()" title="移除背景圖片" style="font-size:13px">✕</button>
-        <input type="file" id="headerBgInput" accept="image/*" style="display:none" onchange="changeHeaderBg(event)">
+        <input type="file" id="headerBgInput" accept="image/*,.jpg,.jpeg,.png,.gif,.webp,.svg" style="display:none" onchange="changeHeaderBg(event)">
       </div>
       <div class="sync-status" id="syncStatus">
         <span class="sync-dot"></span><span class="sync-text">已連線</span>
@@ -40,6 +40,7 @@
     <button class="nav-tab" data-tab="food">食物資料庫</button>
     <button class="nav-tab" data-tab="meal">飲食記錄</button>
     <button class="nav-tab" data-tab="stats">身體數據</button>
+    <button class="nav-tab" data-tab="exercise">運動</button>
   </nav>
 </header>
 
@@ -240,6 +241,74 @@
 
   </section>
 
+  <!-- ── 運動頁籤 ── -->
+  <section id="tab-exercise" class="tab-panel">
+
+    <!-- 頂部：日期 + 今日運動統計 -->
+    <div class="dash-2col">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">今日運動記錄</span>
+          <input type="date" id="exDate" class="date-input" onchange="loadExerciseForDate()">
+        </div>
+        <div style="display:flex;gap:16px;margin-bottom:16px;padding:14px;background:var(--surface);border-radius:var(--r)">
+          <div style="flex:1;text-align:center">
+            <div style="font-size:13px;color:var(--ink-faint);margin-bottom:4px">今日消耗</div>
+            <div style="font-family:var(--font-serif);font-size:26px;color:var(--red)" id="exerciseTotalBurned">0 kcal</div>
+          </div>
+          <div style="width:1px;background:var(--border)"></div>
+          <div style="flex:1;text-align:center">
+            <div style="font-size:13px;color:var(--ink-faint);margin-bottom:4px">調整後 TDEE</div>
+            <div style="font-family:var(--font-serif);font-size:26px;color:var(--green)" id="exerciseAdjTdee">-- kcal</div>
+          </div>
+        </div>
+        <div id="exerciseLogs"></div>
+      </div>
+
+      <!-- 右側：輸入區 -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">輸入運動菜單</span></div>
+
+        <!-- 文字輸入 -->
+        <div class="field-group" style="margin-bottom:14px">
+          <label class="field-label">文字描述</label>
+          <textarea id="exTextInput" class="field-input" rows="5"
+            placeholder="例如：
+早上跑步 30 分鐘
+下午重訓：深蹲 3 組 x 12 下，臥推 3 組 x 10 下
+晚上瑜伽 20 分鐘"
+            style="resize:vertical;font-size:14px;line-height:1.6"></textarea>
+        </div>
+
+        <!-- 圖片上傳 -->
+        <div class="field-group" style="margin-bottom:14px">
+          <label class="field-label">或上傳圖片（健身房菜單截圖等）</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn-secondary" style="padding:8px 16px"
+              onclick="document.getElementById('exImageInput').click()">
+              📷 選擇圖片
+            </button>
+            <span style="font-size:13px;color:var(--ink-faint)">支援 JPG、PNG</span>
+          </div>
+          <input type="file" id="exImageInput" accept="image/*" style="display:none" onchange="previewExImage(event)">
+          <div id="exImagePreview"></div>
+        </div>
+
+        <!-- 分析按鈕 -->
+        <button class="btn-primary" id="analyzeBtn" style="width:100%;padding:12px"
+          onclick="analyzeExercise()">
+          🤖 AI 分析運動菜單
+        </button>
+
+        <div style="margin-top:12px;padding:12px;background:var(--surface);border-radius:var(--r);font-size:13px;color:var(--ink-faint);line-height:1.6">
+          AI 會分析你的運動內容，估算消耗熱量並調整 TDEE。<br>
+          調整後的 TDEE 反映你今天的實際總消耗。
+        </div>
+      </div>
+    </div>
+
+  </section>
+
 </main>
 
 <!-- ── 新增/編輯食物 Modal ── -->
@@ -358,8 +427,8 @@
   </div>
 </div>
 
-<script src="js/config.js?v=31"></script>
-<script src="js/api.js?v=31"></script>
-<script src="js/app.js?v=31"></script>
+<script src="js/config.js?v=32"></script>
+<script src="js/api.js?v=32"></script>
+<script src="js/app.js?v=32"></script>
 </body>
 </html>
