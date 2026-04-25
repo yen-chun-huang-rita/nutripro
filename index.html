@@ -25,6 +25,11 @@
         <button class="color-picker-btn" id="colorPickerBtn" title="更換主題色">🎨</button>
         <div class="color-palette" id="colorPalette"></div>
       </div>
+      <div style="position:relative;display:flex;gap:6px">
+        <button class="color-picker-btn" onclick="document.getElementById('headerBgInput').click()" title="更換表頭背景圖片">🖼️</button>
+        <button class="color-picker-btn" onclick="clearHeaderBg()" title="移除背景圖片" style="font-size:13px">✕</button>
+        <input type="file" id="headerBgInput" accept="image/*" style="display:none" onchange="changeHeaderBg(event)">
+      </div>
       <div class="sync-status" id="syncStatus">
         <span class="sync-dot"></span><span class="sync-text">已連線</span>
       </div>
@@ -353,8 +358,8 @@
   </div>
 </div>
 
-<script src="js/config.js?v=28"></script>
-<script src="js/api.js?v=28"></script>
-<script src="js/app.js?v=28"></script>
+<script src="js/config.js?v=29"></script>
+<script src="js/api.js?v=29"></script>
+<script src="js/app.js?v=29"></script>
 </body>
 </html>
