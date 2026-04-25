@@ -137,6 +137,10 @@ function setupColorPicker(){
   // 套用上次儲存的背景圖片
   const savedBg=localStorage.getItem('nutripro_header_bg');
   if(savedBg) applyHeaderBg(savedBg);
+  // 還原上次的調整值
+  const savedAdj=localStorage.getItem('nutripro_kcal_adj');
+  const adjEl=document.getElementById('kcalAdj');
+  if(savedAdj!==null&&adjEl) adjEl.value=savedAdj;
 }
 
 function selectColor(color){
@@ -624,6 +628,8 @@ window.calcStats=function(){
   // 調整值從固定 DOM 讀取（不在渲染區塊內，不會被重建）
   const adjInput=document.getElementById('kcalAdj');
   const adj=adjInput?+adjInput.value||0:0;
+  // 儲存調整值到 localStorage
+  localStorage.setItem('nutripro_kcal_adj', adj);
   const finalKcal=tdee+adj;
 
   // 只渲染不含調整值輸入框的靜態結果
@@ -707,6 +713,7 @@ window.saveGoalSettings=async function(){
     targetFat:STATE.target.fat
   };
   await API.saveSettings(s);
+  localStorage.setItem('nutripro_kcal_adj', adj);
   showToast('目標設定已儲存','success');
 };
 
@@ -837,9 +844,11 @@ function renderDashboard(){
   const tot=calcTotals(getTodayLogs()),B=STATE.body,T=STATE.target;
   const bmr=Math.round(10*B.weight+6.25*B.height-5*B.age-161),tdee=Math.round(bmr*B.activity),rem=Math.max(0,T.kcal-tot.kcal);
   const mg=document.getElementById('dashMetrics');
+  const deficit=T.kcal-tdee; // 負數=赤字，正數=盈餘，0=維持
+  const deficitStr=deficit===0?'維持體重':deficit<0?`赤字 ${deficit} kcal`:`盈餘 +${deficit} kcal`;
   if(mg)mg.innerHTML=[
     {label:'今日攝取',val:Math.round(tot.kcal),       unit:'kcal',sub:`目標 ${T.kcal} kcal`,   cls:'green'},
-    {label:'剩餘熱量',val:Math.round(rem),             unit:'kcal',sub:`赤字目標 -200 kcal`,     cls:'amber'},
+    {label:'剩餘熱量',val:Math.round(rem),             unit:'kcal',sub:deficitStr,               cls:'amber'},
     {label:'基礎代謝',val:bmr,                         unit:'kcal',sub:`TDEE ${tdee} kcal`,      cls:'blue'},
     {label:'今日蛋白',val:tot.protein.toFixed(1),      unit:'g',   sub:`目標 ${T.protein}g`,     cls:tot.protein>=T.protein?'green':'red'},
   ].map(x=>`<div class="metric-card ${x.cls}"><div class="m-label">${x.label}</div><div class="m-value">${x.val}<span class="m-unit"> ${x.unit}</span></div><div class="m-sub">${x.sub}</div></div>`).join('');
