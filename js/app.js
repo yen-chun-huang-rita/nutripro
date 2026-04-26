@@ -23,6 +23,9 @@ async function init() {
     renderAll();
     const ss=document.getElementById('syncStatus');
     if(ss){ss.textContent='已連線';}
+    // 最後套用背景圖（確保不被 applyHeaderColor 覆蓋）
+    const _savedBg=localStorage.getItem('nutripro_header_bg');
+    if(_savedBg) applyHeaderBg(_savedBg);
     showToast('資料同步完成','success');
   } catch(e) {
     const c=API.lsGet(API.LS.FOODS);
@@ -182,10 +185,15 @@ window.changeHeaderBg=function(e){
 
 function applyHeaderBg(dataUrl){
   const h=document.getElementById('appHeader');
-  if(h){
-    h.style.backgroundImage=dataUrl?`url('${dataUrl}')`:'';
-    h.style.backgroundSize='cover';
-    h.style.backgroundPosition='center 40%';
+  if(!h)return;
+  if(dataUrl){
+    h.style.setProperty('background-image',`url('${dataUrl}')`, 'important');
+    h.style.setProperty('background-size','cover','important');
+    h.style.setProperty('background-position','center 40%','important');
+  } else {
+    h.style.removeProperty('background-image');
+    h.style.removeProperty('background-size');
+    h.style.removeProperty('background-position');
   }
 }
 
