@@ -95,7 +95,7 @@ function setHeaderDate(){
 function setupDatePicker(){
   const inp=document.getElementById('logDate');
   if(!inp)return;
-  inp.value=STATE.currentDate; inp.max=todayStr();
+  inp.value=STATE.currentDate;
 }
 
 window.loadLogsForDate=async function(){
