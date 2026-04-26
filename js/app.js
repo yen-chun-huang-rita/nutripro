@@ -579,8 +579,16 @@ function renderMealProgress(){
     {l:'脂肪',  cur:tot.fat,     tgt:T.fat,     col:CONFIG.CHART.fat},
   ].map(b=>{
     const pct=Math.min(100,(b.cur/b.tgt)*100),over=b.cur>b.tgt*1.05;
+    const pctStr=Math.round(pct)+'%';
+    const pctCls=over?'color:#b03a2e':pct>=85?'color:var(--green)':'color:var(--ink-faint)';
     return `<div class="prog-wrap">
-      <div class="prog-header"><span class="prog-label">${b.l}</span><span>${b.cur.toFixed(0)} / ${b.tgt}</span></div>
+      <div class="prog-header">
+        <span class="prog-label">${b.l}</span>
+        <span style="display:flex;align-items:center;gap:8px">
+          <span style="${pctCls};font-weight:600;font-size:14px">${pctStr}</span>
+          <span style="color:var(--ink-faint)">${b.cur.toFixed(0)} / ${b.tgt}</span>
+        </span>
+      </div>
       <div class="prog-track"><div class="prog-fill" style="width:${pct}%;background:${over?'#b03a2e':b.col}"></div></div>
     </div>`;
   }).join('');
@@ -868,7 +876,21 @@ function renderDashProgress(tot){
     {l:'蛋白質',cur:tot.protein, tgt:T.protein, col:CONFIG.CHART.protein},
     {l:'碳水',  cur:tot.carb,    tgt:T.carb,    col:CONFIG.CHART.carb},
     {l:'脂肪',  cur:tot.fat,     tgt:T.fat,     col:CONFIG.CHART.fat},
-  ].map(b=>{const pct=Math.min(100,(b.cur/b.tgt)*100),over=b.cur>b.tgt*1.05;return`<div class="prog-wrap"><div class="prog-header"><span class="prog-label">${b.l}</span><span>${b.cur.toFixed(0)} / ${b.tgt}</span></div><div class="prog-track"><div class="prog-fill" style="width:${pct}%;background:${over?'#b03a2e':b.col}"></div></div></div>`;}).join('');
+  ].map(b=>{
+    const pct=Math.min(100,(b.cur/b.tgt)*100),over=b.cur>b.tgt*1.05;
+    const pctStr=Math.round(pct)+'%';
+    const pctCls=over?'color:#b03a2e':pct>=85?'color:var(--green)':'color:var(--ink-faint)';
+    return`<div class="prog-wrap">
+      <div class="prog-header">
+        <span class="prog-label">${b.l}</span>
+        <span style="display:flex;align-items:center;gap:8px">
+          <span style="${pctCls};font-weight:600;font-size:14px">${pctStr}</span>
+          <span style="color:var(--ink-faint)">${b.cur.toFixed(0)} / ${b.tgt}</span>
+        </span>
+      </div>
+      <div class="prog-track"><div class="prog-fill" style="width:${pct}%;background:${over?'#b03a2e':b.col}"></div></div>
+    </div>`;
+  }).join('');
 }
 
 function renderBodyComp(){
