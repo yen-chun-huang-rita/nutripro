@@ -155,10 +155,27 @@ window.changeHeaderBg=function(e){
   if(!file)return;
   const reader=new FileReader();
   reader.onload=function(ev){
-    const dataUrl=ev.target.result;
-    applyHeaderBg(dataUrl);
-    localStorage.setItem('nutripro_header_bg',dataUrl);
-    showToast('表頭背景已更新','success');
+    // 壓縮圖片再儲存，避免超過 localStorage 容量
+    const img=new Image();
+    img.onload=function(){
+      const canvas=document.createElement('canvas');
+      const maxW=1600, maxH=600;
+      let w=img.width, h=img.height;
+      if(w>maxW){h=Math.round(h*maxW/w);w=maxW;}
+      if(h>maxH){w=Math.round(w*maxH/h);h=maxH;}
+      canvas.width=w; canvas.height=h;
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0,w,h);
+      const compressed=canvas.toDataURL('image/jpeg',0.75);
+      applyHeaderBg(compressed);
+      try{
+        localStorage.setItem('nutripro_header_bg',compressed);
+        showToast('表頭背景已更新並儲存','success');
+      }catch(err){
+        showToast('圖片已套用但無法儲存（容量不足），重新整理後會消失','error',5000);
+      }
+    };
+    img.src=ev.target.result;
   };
   reader.readAsDataURL(file);
 };
