@@ -384,6 +384,56 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- 編輯飲食記錄 Modal -->
+<div class="modal-overlay" id="editLogModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">編輯飲食記錄</span>
+      <button class="modal-close" onclick="closeEditLog()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editLogId">
+      <div class="modal-grid">
+        <div class="field-group">
+          <label class="field-label">餐別</label>
+          <select class="field-input" id="editLogMeal">
+            <option>早餐</option><option>午餐</option>
+            <option>晚餐</option><option>點心</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">食物名稱</label>
+          <input class="field-input" id="editLogFoodName" type="text">
+        </div>
+        <div class="field-group">
+          <label class="field-label">份量 (g/ml)</label>
+          <input class="field-input" id="editLogQty" type="number" step="1" min="0">
+        </div>
+        <div class="field-group">
+          <label class="field-label">熱量 (kcal)</label>
+          <input class="field-input" id="editLogKcal" type="number" step="0.1" min="0">
+        </div>
+        <div class="field-group">
+          <label class="field-label">蛋白質 (g)</label>
+          <input class="field-input" id="editLogProtein" type="number" step="0.1" min="0">
+        </div>
+        <div class="field-group">
+          <label class="field-label">碳水 (g)</label>
+          <input class="field-input" id="editLogCarb" type="number" step="0.1" min="0">
+        </div>
+        <div class="field-group" style="grid-column:span 2">
+          <label class="field-label">脂肪 (g)</label>
+          <input class="field-input" id="editLogFat" type="number" step="0.1" min="0">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeEditLog()">取消</button>
+      <button class="btn-primary" onclick="saveEditLog()">&#x1F4BE; 儲存</button>
+    </div>
+  </div>
+</div>
+
 <!-- 編輯身體數據 Modal -->
 <div class="modal-overlay" id="editBodyStatModal">
   <div class="modal">
@@ -427,8 +477,8 @@
   </div>
 </div>
 
-<script src="js/config.js?v=37"></script>
-<script src="js/api.js?v=37"></script>
-<script src="js/app.js?v=37"></script>
+<script src="js/config.js?v=38"></script>
+<script src="js/api.js?v=38"></script>
+<script src="js/app.js?v=38"></script>
 </body>
 </html>
