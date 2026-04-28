@@ -95,7 +95,7 @@ function setHeaderDate(){
 function setupDatePicker(){
   const inp=document.getElementById('logDate');
   if(!inp)return;
-  inp.value=STATE.currentDate;
+  inp.value=STATE.currentDate; inp.max=todayStr();
 }
 
 window.loadLogsForDate=async function(){
@@ -488,6 +488,7 @@ function renderMeals(){
       <div class="log-macro">${(+log.carb).toFixed(1)}g</div>
       <div class="log-macro">${(+log.fat).toFixed(1)}g</div>
       <div class="log-kcal">${Math.round(+log.kcal)}</div>
+      <button class="btn-icon edit" onclick="openEditLog('${log.id}','${meal}')" style="width:26px;height:26px;font-size:12px" title="編輯">✏️</button>
       <button class="del-btn" onclick="removeLog('${log.id}','${meal}')">✕</button>
     </div>`).join('');
     return `<div class="meal-section">
@@ -869,6 +870,53 @@ window.confirmDeleteBodyStat = function(id, dateStr) {
     } catch(e) { showToast('刪除失敗：' + e.message, 'error'); }
     closeConfirm();
   };
+};
+
+
+// ── 飲食記錄 編輯 ─────────────────────────────────────────
+window.openEditLog = function(id, meal) {
+  const logs = STATE.logs[STATE.currentDate] || [];
+  const log = logs.find(l => l.id === id);
+  if (!log) return;
+  document.getElementById('editLogId').value = id;
+  document.getElementById('editLogMeal').value = log.meal;
+  document.getElementById('editLogFoodName').value = log.foodName;
+  document.getElementById('editLogQty').value = log.qty;
+  document.getElementById('editLogKcal').value = log.kcal;
+  document.getElementById('editLogProtein').value = log.protein;
+  document.getElementById('editLogCarb').value = log.carb;
+  document.getElementById('editLogFat').value = log.fat;
+  document.getElementById('editLogModal').classList.add('open');
+};
+
+window.closeEditLog = function() {
+  document.getElementById('editLogModal').classList.remove('open');
+};
+
+window.saveEditLog = async function() {
+  const id = document.getElementById('editLogId').value;
+  const logs = STATE.logs[STATE.currentDate] || [];
+  const idx = logs.findIndex(l => l.id === id);
+  if (idx < 0) return;
+  const log = {
+    ...logs[idx],
+    meal:     document.getElementById('editLogMeal').value,
+    foodName: document.getElementById('editLogFoodName').value,
+    qty:      +document.getElementById('editLogQty').value,
+    kcal:     +document.getElementById('editLogKcal').value,
+    protein:  +document.getElementById('editLogProtein').value,
+    carb:     +document.getElementById('editLogCarb').value,
+    fat:      +document.getElementById('editLogFat').value,
+  };
+  try {
+    await API.saveLog(log);
+    logs[idx] = log;
+    closeEditLog();
+    renderMeals();
+    showToast('已更新', 'success');
+  } catch(e) {
+    showToast('更新失敗：' + e.message, 'error');
+  }
 };
 
 // ══════════════════════════════════════════════════════════
