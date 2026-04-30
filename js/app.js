@@ -713,6 +713,10 @@ window.calcStats=function(){
   const defPerDay=daysLeft>0?Math.round(defTotal/daysLeft):0;
   const dailyT=Math.round(tdee-defPerDay);
 
+  // 更新目標設定標題
+  const goalCardTitle=document.getElementById('goalCardTitle');
+  if(goalCardTitle) goalCardTitle.textContent=goalDate?`${daysLeft} 天目標設定`:'目標設定';
+
   const gr=document.getElementById('goalResults');
   if(gr)gr.innerHTML=[
     ['目標日期', `<span style="font-weight:600;color:var(--amber)">${daysLabel}</span>`],
@@ -827,9 +831,12 @@ function renderBodyStatTable(){
         const wDiff=(+s.weight-+gw).toFixed(1);
         const fDiff=gfp&&s.fatPct?(+s.fatPct-+gfp).toFixed(1):null;
         const mDiff=gmp&&s.musclePct?(+gmp-+s.musclePct).toFixed(1):null;
-        const wStr=+wDiff>0?`<span style="color:var(--red)">體重+${wDiff}kg</span>`:+wDiff<0?`<span style="color:var(--green)">體重${wDiff}kg</span>`:'<span style="color:var(--green)">體重✓</span>';
-        const fStr=fDiff!==null?(+fDiff>0?`<span style="color:var(--red)">體脂+${fDiff}%</span>`:`<span style="color:var(--green)">體脂${fDiff}%</span>`):'';
-        const mStr=mDiff!==null?(+mDiff>0?`<span style="color:var(--red)">肌率-${mDiff}%</span>`:`<span style="color:var(--green)">肌率+${Math.abs(+mDiff)}%</span>`):'';
+        // 體重：正數=超出目標=紅色，負數=低於目標=綠色
+        const wStr=+wDiff>0?`<span style="color:var(--red)">體重 -${wDiff}kg</span>`:+wDiff<0?`<span style="color:var(--green)">體重 ${wDiff}kg ✓</span>`:'<span style="color:var(--green)">體重 ✓</span>';
+        // 體脂：正數=超出目標=紅色
+        const fStr=fDiff!==null?(+fDiff>0?`<span style="color:var(--red)">體脂 -${fDiff}%</span>`:`<span style="color:var(--green)">體脂 ${fDiff}% ✓</span>`):'';
+        // 肌率：mDiff=目標-現在，正數=未達目標=紅色
+        const mStr=mDiff!==null?(+mDiff>0?`<span style="color:var(--red)">肌率 +${mDiff}%</span>`:`<span style="color:var(--green)">肌率 ${Math.abs(+mDiff)}% ✓</span>`):'';
         diffStr=[wStr,fStr,mStr].filter(Boolean).join('<br>');
       }
       const sid=s.id||'';
