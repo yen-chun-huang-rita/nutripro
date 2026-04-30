@@ -57,6 +57,7 @@ function applySettings(s){
   if(s.goalWeight)   STATE.goal.weight    =+s.goalWeight;
   if(s.goalFatPct)   STATE.goal.fatPct    =+s.goalFatPct;
   if(s.goalMusclePct)STATE.goal.musclePct =+s.goalMusclePct;
+  if(s.goalDate)     STATE.goal.date      =s.goalDate;
   if(s.water)        STATE.water          =+s.water;
 }
 
@@ -630,6 +631,8 @@ function renderStatsForm(){
   const cf=document.getElementById('currentForm'),gf=document.getElementById('goalForm');
   const dateEl=document.getElementById('bodyStatDate');
   if(dateEl&&!dateEl.value) dateEl.value=todayStr();
+  const gDateEl=document.getElementById('g_date');
+  if(gDateEl&&STATE.goal.date&&!gDateEl.value) gDateEl.value=STATE.goal.date;
   if(!cf||!gf)return;
   // 保留已有的 kcalAdj 值（不重建輸入框）
   const existingAdj=document.getElementById('kcalAdj')?.value||'0';
@@ -696,16 +699,28 @@ window.calcStats=function(){
   const gw=+document.getElementById('g_weight')?.value||STATE.goal.weight;
   const gfp=+document.getElementById('g_fat')?.value||STATE.goal.fatPct;
   const gmp=+document.getElementById('g_muscle')?.value||STATE.goal.musclePct;
-  STATE.goal={weight:gw,fatPct:gfp,musclePct:gmp};
+  const gDate=document.getElementById('g_date')?.value||STATE.goal.date||'';
+  STATE.goal={weight:gw,fatPct:gfp,musclePct:gmp,date:gDate};
+
+  // 計算距目標日期天數
+  const today=new Date(todayStr());
+  const goalDate=gDate?new Date(gDate):null;
+  const daysLeft=goalDate?Math.ceil((goalDate-today)/(1000*60*60*24)):90;
+  const daysLabel=goalDate?`${gDate}（距今 ${daysLeft} 天）`:'未設定目標日期';
+
   const wD=(w-gw).toFixed(1),fD=(fp-gfp).toFixed(1),mD=(gmp-mp).toFixed(1);
-  const def90=Math.round(+wD*7700/90),dailyT=Math.round(tdee-def90);
+  const defTotal=Math.round(+wD*7700);
+  const defPerDay=daysLeft>0?Math.round(defTotal/daysLeft):0;
+  const dailyT=Math.round(tdee-defPerDay);
+
   const gr=document.getElementById('goalResults');
   if(gr)gr.innerHTML=[
+    ['目標日期', `<span style="font-weight:600;color:var(--amber)">${daysLabel}</span>`],
     ['體重變化',`${+wD>0?'-':''}${Math.abs(+wD)} kg → ${gw} kg`],
     ['體脂率變化',`-${fD}% → ${gfp}%`],
     ['骨骼肌率增加',`+${mD}% → ${gmp}%`],
-    ['達標所需每日赤字',`${def90} kcal`],
-    ['90天每日建議攝取',`<span class="res-hl">${dailyT} kcal</span>`],
+    ['達標所需每日赤字',`${defPerDay} kcal`],
+    [`${daysLeft}天每日建議攝取`,`<span class="res-hl">${dailyT} kcal</span>`],
   ].map(([l,v])=>`<div class="result-row"><span class="res-label">${l}</span><span class="res-val">${v}</span></div>`).join('');
   renderCompChart(fp,gfp,mp,gmp);renderHistoryChart();
 };
@@ -737,6 +752,7 @@ window.saveGoalSettings=async function(){
     goalWeight:STATE.goal.weight,
     goalFatPct:STATE.goal.fatPct,
     goalMusclePct:STATE.goal.musclePct,
+    goalDate:STATE.goal.date||'',
     bodyHeight:STATE.body.height,
     bodyWeight:STATE.body.weight,
     bodyAge:STATE.body.age,
@@ -788,22 +804,42 @@ function renderBodyStatTable(){
     el.innerHTML='<p style="color:var(--ink-faint);font-size:14px;padding:12px 0">此區間無數據</p>';
     return;
   }
+  const goalDate = STATE.goal?.date || '';
+  const gw = STATE.goal?.weight;
+  const gfp = STATE.goal?.fatPct;
+  const gmp = STATE.goal?.musclePct;
+
   el.innerHTML=`<div class="table-wrap"><table class="data-table">
     <thead><tr>
-      <th>日期</th><th>體重 (kg)</th><th>體脂率 (%)</th><th>骨骼肌率 (%)</th><th>BMI</th><th>操作</th>
+      <th>日期</th><th>體重 (kg)</th><th>體脂率 (%)</th><th>骨骼肌率 (%)</th><th>BMI</th><th>距目標差距</th><th>操作</th>
     </tr></thead>
     <tbody>${stats.map(s=>{
       const h=+s.height||STATE.body.height||162;
       const bmi=h?(+s.weight/((h/100)**2)).toFixed(1):'-';
       const bmiCls=bmi==='-'?'':+bmi<18.5?'color:var(--blue)':+bmi<24?'color:var(--green)':+bmi<27?'color:var(--amber)':'color:var(--red)';
       const dateStr=String(s.date).slice(0,10);
+      const isGoalDate=goalDate&&dateStr===goalDate;
+      const rowStyle=isGoalDate?'background:rgba(230,168,0,0.15);':'';
+      const goalTag=isGoalDate?'<span style="color:var(--amber);font-size:11px;margin-left:4px">🎯目標日</span>':'';
+      // 距目標差距
+      let diffStr='-';
+      if(gw&&s.weight){
+        const wDiff=(+s.weight-+gw).toFixed(1);
+        const fDiff=gfp&&s.fatPct?(+s.fatPct-+gfp).toFixed(1):null;
+        const mDiff=gmp&&s.musclePct?(+gmp-+s.musclePct).toFixed(1):null;
+        const wStr=+wDiff>0?`<span style="color:var(--red)">體重+${wDiff}kg</span>`:+wDiff<0?`<span style="color:var(--green)">體重${wDiff}kg</span>`:'<span style="color:var(--green)">體重✓</span>';
+        const fStr=fDiff!==null?(+fDiff>0?`<span style="color:var(--red)">體脂+${fDiff}%</span>`:`<span style="color:var(--green)">體脂${fDiff}%</span>`):'';
+        const mStr=mDiff!==null?(+mDiff>0?`<span style="color:var(--red)">肌率-${mDiff}%</span>`:`<span style="color:var(--green)">肌率+${Math.abs(+mDiff)}%</span>`):'';
+        diffStr=[wStr,fStr,mStr].filter(Boolean).join('<br>');
+      }
       const sid=s.id||'';
-      return `<tr>
-        <td style="font-weight:500">${dateStr}</td>
+      return `<tr style="${rowStyle}">
+        <td style="font-weight:500">${dateStr}${goalTag}</td>
         <td>${s.weight||'-'}</td>
         <td>${s.fatPct||'-'}</td>
         <td>${s.musclePct||'-'}</td>
         <td style="${bmiCls};font-weight:600">${bmi}</td>
+        <td style="font-size:12px;line-height:1.8">${diffStr}</td>
         <td><div class="action-btns">
           <button class="btn-icon edit" onclick="openEditBodyStat('${sid}')" title="編輯">✏️</button>
           <button class="btn-icon del"  onclick="confirmDeleteBodyStat('${sid}','${dateStr}')" title="刪除">🗑️</button>
