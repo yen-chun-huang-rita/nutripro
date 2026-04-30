@@ -716,6 +716,9 @@ window.calcStats=function(){
   // 更新目標設定標題
   const goalCardTitle=document.getElementById('goalCardTitle');
   if(goalCardTitle) goalCardTitle.textContent=goalDate?`${daysLeft} 天目標設定`:'目標設定';
+  // 更新體組成圖表 badge
+  const compBadge=document.getElementById('compChartBadge');
+  if(compBadge) compBadge.textContent=goalDate?`${daysLeft} 天目標`:'90天目標';
 
   const gr=document.getElementById('goalResults');
   if(gr)gr.innerHTML=[
