@@ -198,6 +198,10 @@
       <div class="card">
         <div class="card-header"><span class="card-title">90天目標設定</span></div>
         <div class="stats-form" id="goalForm"></div>
+        <div class="field-group" style="margin-top:8px">
+          <label class="field-label">🎯 目標日期</label>
+          <input type="date" id="g_date" class="field-input" onchange="calcStats()" style="max-width:200px">
+        </div>
         <div class="section-label" style="margin-top:16px">目標分析</div>
         <div id="goalResults"></div>
         <button class="btn-secondary" style="margin-top:12px;width:100%" onclick="saveGoalSettings()">&#x1F4BE; 儲存目標設定</button>
@@ -477,8 +481,8 @@
   </div>
 </div>
 
-<script src="js/config.js?v=40"></script>
-<script src="js/api.js?v=40"></script>
-<script src="js/app.js?v=40"></script>
+<script src="js/config.js?v=41"></script>
+<script src="js/api.js?v=41"></script>
+<script src="js/app.js?v=41"></script>
 </body>
 </html>
